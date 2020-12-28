@@ -1,0 +1,13 @@
+var express = require('express');
+var router = express.Router();
+var path = require('path');
+
+router.get('/', function (req, res) {
+  res.sendfile(
+    path.resolve(__dirname + '/../../scrabble/dist/scrabble/index.html')
+  );
+});
+
+router.use(express.static(__dirname + '/../../scrabble/dist/scrabble'));
+
+module.exports = router;
