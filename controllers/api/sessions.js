@@ -7,7 +7,7 @@ router.post('/', function(req, res, next) {
     var token = jwt.encode({
       username: req.body.username
     }, config.secret)
-    res.status(201).send(token)
+    res.json({jwt: token})
   }
   catch (ex) {
     console.log('Caught '+ex.message)
