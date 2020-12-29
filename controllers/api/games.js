@@ -1,19 +1,85 @@
 var router = require('express').Router();
 var jwt = require('jwt-simple');
 var config = require('../../config');
-var ws = require('../../websockets');
+//var ws = require('../../websockets');
+var Tile = require('../../tile');
 var Tiles = require('../../tiles');
 var shuffle = require('lodash.shuffle');
 var _ = require('lodash');
 
 var games = [];
+var nextId = 1234;
+var tileValues = [
+  1,
+  3,
+  3,
+  2,
+  1,
+  4,
+  2,
+  4,
+  1,
+  8,
+  5,
+  1,
+  3,
+  1,
+  1,
+  3,
+  10,
+  1,
+  1,
+  1,
+  1,
+  4,
+  4,
+  8,
+  4,
+  10,
+]; //A..Z
 
-nextId = 1234;
+function makeTile(ch) {
+  if (ch === ' ') {
+    return new Tile(ch, 0, true);
+  } else {
+    let value = tileValue[ch.charCodeAt(0) - 65];
+    return new Tile(ch, value, false);
+  }
+}
 
-// return a collection of games
+function getGameForUser(game, username) {
+  let players = [];
+  for (let i = 0; i < game.players.length; i++) {
+    let player = game.players[i];
+    if (username === player.user) {
+      players.push({
+        user: player.user,
+        tiles: player.tiles,
+        score: player.score,
+      });
+    } else {
+      players.push({ user: player.user, score: player.score });
+    }
+  }
+  obj = {
+    id: game.id,
+    owner: game.owner,
+    players: players,
+    current_player: game.current_player,
+    status: game.status,
+    num_free_tiles: game.free_tiles.length,
+    board: game.board,
+  };
+  return obj;
+}
+
+// return ids of all games
 router.get('/', function (req, res, next) {
-  console.log('get games');
-  res.json(games);
+  let ids = [];
+  for (let i = 0; i < games.length; i++) {
+    ids.push(games[i].id);
+  }
+  res.json({ games: ids });
 });
 
 // return game details
@@ -26,41 +92,13 @@ router.get('/:id', function (req, res, next) {
 
   var game = findGame(req.params.id);
   if (game) {
-    //console.dir(game);
-    players = [];
-    //console.dir(game.players);
-    for (i = 0; i < game.players.length; i++) {
-      let player = game.players[i];
-      //console.dir(player);
-      if (username === player.user) {
-        players.push({
-          user: player.user,
-          tiles: player.tiles,
-          score: player.score,
-        });
-      } else {
-        players.push({ user: player.user, score: player.score });
-      }
-    }
-    obj = {
-      id: game.id,
-      owner: game.owner,
-      players: players,
-      status: game.status,
-      num_free_tiles: game.free_tiles.length,
-      board: game.board,
-    };
-    res.json(obj);
+    res.json(getGameForUser(game, username));
   } else {
     return res.sendStatus(404);
   }
 });
 
-// return list of players for a game
-router.get('/:/id/players', function (req, res, next) {
-  res.json(games[req.params.id].players);
-});
-
+// create a new game
 router.post('/', function (req, res, next) {
   if (!req.headers['x-auth']) {
     return res.sendStatus(401);
@@ -73,10 +111,8 @@ router.post('/', function (req, res, next) {
       return res.sendStatus(409);
     }
   }
-  // create a new game
   // create the tile set and shuffle it now
   let tiles = shuffle(new Tiles().tiles);
-  let myTiles = tiles.splice(0, 6);
   let id = nextId;
   let board = ' '.repeat(112) + 'HELLO' + ' '.repeat(108);
 
@@ -84,44 +120,82 @@ router.post('/', function (req, res, next) {
     id: id,
     owner: username,
     status: 'waiting',
-    players: [{ user: username, tiles: myTiles, score: 0 }],
+    players: [],
+    current_player: username,
     free_tiles: tiles,
     board: board,
   });
+  /*
   ws.broadcast('newgame', {
     id: nextId,
     owner: username,
     status: 'waiting',
     players: [username],
   });
+*/
   nextId++;
   res.json({ id: id });
 });
 
+// return list of players for a game
+router.get('/:id/players', function (req, res, next) {
+  let game = findGame(req.params.id);
+
+  if (!game) {
+    return res.sendStatus(404);
+  }
+
+  let players = [];
+  for (let i = 0; i < game.players.length; i++) {
+    let player = game.players[i];
+    players.push(player.user);
+  }
+  res.json({ players: players });
+});
+
+// add a player to the game
 router.post('/:id/players', function (req, res, next) {
   if (!req.headers['x-auth']) {
     return res.sendStatus(401);
   }
   var auth = jwt.decode(req.headers['x-auth'], config.secret);
   var username = auth.username;
-  var i;
   var game = findGame(req.params.id);
-  if (!game) {
+  console.dir(game);
+  if (!game || game.status !== 'waiting') {
     return res.sendStatus(404);
   }
-  for (i = 0; i < game.players.length; i++) {
-    if (game.players[i] === username) {
-      return res.sendStatus(409);
+  found = false;
+  for (let i = 0; i < game.players.length; i++) {
+    if (game.players[i].user === username) {
+      found = true;
     }
   }
-  game.players.push(username);
-  ws.broadcast('newplayer', { gameId: game.id, player: username });
+  if (!found) {
+    let myTiles = game.free_tiles.splice(0, 6);
+    game.players.push({ user: username, tiles: myTiles, score: 0 });
+  }
+  //ws.broadcast('newplayer', { gameId: game.id, player: username });
   res.sendStatus(201);
 });
 
-// change the status of a game
+// place some tiles
 // the auth user must be a player of the game
 //
+/*
+post data:
+{
+  row: number,       // 0-based index
+  col: number,
+  direction: string, // 'A', or 'D'
+  tiles: string,     // Tiles to play/change. Upper-case for normal tiles, lower-case for blank
+  move_type: string  //'play', 'change', 'pass'
+}
+returns:
+{
+  status: string     // 'ok' or error message
+}
+*/
 router.put('/:id', function (req, res, next) {
   if (!req.headers['x-auth']) {
     return res.sendStatus(401);
@@ -136,36 +210,69 @@ router.put('/:id', function (req, res, next) {
   if (!_.includes(game.players, username)) {
     return res.sendStatus(401);
   }
-  if (req.body.status) {
-    game.status = req.body.status;
-    if (game.status === 'playing') {
-      ws.broadcast('gameon', { gameId: game.id });
-    } else if (game.status === 'complete') {
-      console.log('deleting game');
-      deleteGame(game.id);
-      ws.broadcast('gameover', { gameId: game.id });
+  game.status = 'playing';
+
+  if (game.current_player !== username) {
+    return res.json({ status: 'not your turn!' });
+  }
+
+  if (req.body.move_type === 'play') {
+    // play the tiles
+    //if ( playTiles(game, req.body.row, req.body.col, req.body.tiles) )
+    // move on to next player
+    let numPlayers = game.players.length;
+    let nextPlayerIndex = 0;
+    for (let i = 0; i < numPlayers; i++) {
+      if (game.players[i].user === game.current_player) {
+        nextPlayerIndex = i + 1;
+      }
+      if (nextPlayerIndex >= numPlayers) {
+        game.current_player = game.players[0].user;
+      } else {
+        game.current_player = game.players[nextPlayerIndex].user;
+      }
     }
-  }
-  if (req.body.set) {
-    if (!completed(game, req.body.set) && checkSet(req.body.set)) {
-      game.completedSets.push(req.body.set);
-      ws.broadcast('goodset', {
-        gameId: game.id,
-        set: req.body.set,
-        player: username,
-      });
-    } else {
-      ws.broadcast('badset', {
-        gameId: game.id,
-        set: req.body.set,
-        player: username,
-      });
+    return res.json({ status: 'ok' });
+  } else if (req.body.move_type === 'change') {
+    // change some tiles
+    let numTiles = req.body.tiles.length;
+    for (let i = 0; i < numTiles; i++) {
+      let tile = makeTile(req.body.tiles[i]);
+      game.tiles.push(tile);
     }
+    game.tiles = shuffle(game.tiles);
+    let myTiles = game.tiles.splice(0, numTiles - 1);
+    let numPlayers = game.players.length;
+    let nextPlayerIndex = 0;
+    for (let i = 0; i < numPlayers; i++) {
+      if (game.players[i].user === game.current_player) {
+        game.players[i].tiles = myTiles;
+        nextPlayerIndex = i + 1;
+      }
+      if (nextPlayerIndex >= numPlayers) {
+        game.current_player = game.players[0].user;
+      } else {
+        game.current_player = game.players[nextPlayerIndex].user;
+      }
+    }
+    return res.json({ status: 'ok' });
+  } else {
+    // pass
+    // move on to next player
+    let numPlayers = game.players.length;
+    let nextPlayerIndex = 0;
+    for (let i = 0; i < numPlayers; i++) {
+      if (game.players[i].user === game.current_player) {
+        nextPlayerIndex = i + 1;
+      }
+      if (nextPlayerIndex >= numPlayers) {
+        game.current_player = game.players[0].user;
+      } else {
+        game.current_player = game.players[nextPlayerIndex].user;
+      }
+    }
+    return res.json({ status: 'ok' });
   }
-  if (req.body.deal) {
-    ws.broadcast('deal', { gameId: game.id });
-  }
-  res.sendStatus(200);
 });
 
 var eq = function (c1, c2) {

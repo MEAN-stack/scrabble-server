@@ -1,8 +1,4 @@
-var Tile = function (letter, value, isBlank) {
-  this.letter = letter;
-  this.value = value;
-  this.isBlank = isBlank;
-};
+var Tile = require('./tile');
 
 var Tiles = function () {
   var arr = [];
