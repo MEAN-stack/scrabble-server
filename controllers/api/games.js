@@ -6,12 +6,6 @@ var Tiles = require('../../tiles');
 var shuffle = require('lodash.shuffle');
 var _ = require('lodash');
 
-// var game =  {
-//  id: "1234",
-//  owner: "paul",
-//  status: "waiting/playing/complete"
-//}
-
 var games = [];
 
 nextId = 1234;
@@ -24,9 +18,39 @@ router.get('/', function (req, res, next) {
 
 // return game details
 router.get('/:id', function (req, res, next) {
+  //  if (!req.headers['x-auth']) {
+  //    return res.sendStatus(401);
+  //  }
+  //  var auth = jwt.decode(req.headers['x-auth'], config.secret);
+  var username = 'Paul'; //auth.username;
+
   var game = findGame(req.params.id);
   if (game) {
-    res.json(game);
+    //console.dir(game);
+    players = [];
+    //console.dir(game.players);
+    for (i = 0; i < game.players.length; i++) {
+      let player = game.players[i];
+      //console.dir(player);
+      if (username === player.user) {
+        players.push({
+          user: player.user,
+          tiles: player.tiles,
+          score: player.score,
+        });
+      } else {
+        players.push({ user: player.user, score: player.score });
+      }
+    }
+    obj = {
+      id: game.id,
+      owner: game.owner,
+      players: players,
+      status: game.status,
+      num_free_tiles: game.free_tiles.length,
+      board: game.board,
+    };
+    res.json(obj);
   } else {
     return res.sendStatus(404);
   }
@@ -51,15 +75,18 @@ router.post('/', function (req, res, next) {
   }
   // create a new game
   // create the tile set and shuffle it now
-  var tiles = shuffle(new Tiles().tiles);
+  let tiles = shuffle(new Tiles().tiles);
+  let myTiles = tiles.splice(0, 6);
+  let id = nextId;
+  let board = ' '.repeat(112) + 'HELLO' + ' '.repeat(108);
 
   games.push({
-    id: nextId,
+    id: id,
     owner: username,
     status: 'waiting',
-    players: [username],
-    tiles: tiles,
-    completedSets: [],
+    players: [{ user: username, tiles: myTiles, score: 0 }],
+    free_tiles: tiles,
+    board: board,
   });
   ws.broadcast('newgame', {
     id: nextId,
@@ -68,7 +95,7 @@ router.post('/', function (req, res, next) {
     players: [username],
   });
   nextId++;
-  res.sendStatus(201);
+  res.json({ id: id });
 });
 
 router.post('/:id/players', function (req, res, next) {
