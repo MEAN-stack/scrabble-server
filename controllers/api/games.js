@@ -47,6 +47,11 @@ function makeTile(ch) {
   }
 }
 
+function setCharAt(str, index, chr) {
+  if (index > str.length - 1) return str;
+  return str.substring(0, index) + chr + str.substring(index + 1);
+}
+
 function getGameForUser(game, username) {
   let players = [];
   for (let i = 0; i < game.players.length; i++) {
@@ -73,6 +78,66 @@ function getGameForUser(game, username) {
   return obj;
 }
 
+function playTiles(game, row, col, direction, tiles) {
+  console.log('playTiles');
+  let index = row * 15 + col;
+
+  const newBoard = ' '.repeat(225);
+  if (game.board === newBoard) {
+    console.log('new board');
+    if (index != 112) {
+      console.log('must start in centre');
+      return false;
+    }
+  }
+  // if the first position is already occupied then fail
+  if (game.board[index] !== ' ') {
+    console.log('must start in empty square');
+    return false;
+  }
+  let origBoard = game.board;
+  let stride = 1;
+  let numTiles = tiles.length;
+  if (direction === 'D') {
+    stride = 15;
+  }
+  // try to place each tile
+  for (let i = 0; i < numTiles; i++) {
+    // step to the next unoccupied board position
+    console.log('index: ' + index + ' (' + game.board[index] + ')');
+    while (index < 225 && game.board[index] !== ' ') {
+      index += stride;
+    }
+    // if we didn't fall off the board then play the tile
+    if (index < 255) {
+      console.log('placing ' + tiles[i] + ' at position ' + index);
+      game.board = setCharAt(game.board, index, tiles[i]);
+    } else {
+      // invalid play, put the tiles back how they were
+      game.board = origBoard;
+      return false;
+    }
+  }
+  return true;
+}
+
+function removeTiles(game, tiles) {
+  let numPlayers = game.players.length;
+  for (let i = 0; i < numPlayers; i++) {
+    if (game.players[i].user === game.current_player) {
+      for (let j = 0; j < tiles.length; j++) {
+        let ch = tiles[j];
+        for (let k = 0; k < game.players[i].tiles.length; k++) {
+          if (ch === game.players[i].tiles[k].letter) {
+            game.players[i].tiles.splice(k, 1);
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
 // return ids of all games
 router.get('/', function (req, res, next) {
   let ids = [];
@@ -84,11 +149,11 @@ router.get('/', function (req, res, next) {
 
 // return game details
 router.get('/:id', function (req, res, next) {
-  //  if (!req.headers['x-auth']) {
-  //    return res.sendStatus(401);
-  //  }
-  //  var auth = jwt.decode(req.headers['x-auth'], config.secret);
-  var username = 'Paul'; //auth.username;
+  if (!req.headers['x-auth']) {
+    return res.sendStatus(401);
+  }
+  var auth = jwt.decode(req.headers['x-auth'], config.secret);
+  var username = auth.username;
 
   var game = findGame(req.params.id);
   if (game) {
@@ -114,7 +179,7 @@ router.post('/', function (req, res, next) {
   // create the tile set and shuffle it now
   let tiles = shuffle(new Tiles().tiles);
   let id = nextId;
-  let board = ' '.repeat(112) + 'HELLO' + ' '.repeat(108);
+  let board = ' '.repeat(225);
 
   games.push({
     id: id,
@@ -172,7 +237,7 @@ router.post('/:id/players', function (req, res, next) {
     }
   }
   if (!found) {
-    let myTiles = game.free_tiles.splice(0, 6);
+    let myTiles = game.free_tiles.splice(0, 7);
     game.players.push({ user: username, tiles: myTiles, score: 0 });
   }
   //ws.broadcast('newplayer', { gameId: game.id, player: username });
@@ -197,51 +262,108 @@ returns:
 }
 */
 router.put('/:id', function (req, res, next) {
+  console.log('play');
+
   if (!req.headers['x-auth']) {
     return res.sendStatus(401);
   }
   var auth = jwt.decode(req.headers['x-auth'], config.secret);
   var username = auth.username;
 
+  console.log('username: ' + username);
+
   var game = findGame(req.params.id);
   if (!game) {
     return res.sendStatus(404);
   }
-  if (!_.includes(game.players, username)) {
+
+  console.log('found game');
+  console.dir(game);
+
+  let found = false;
+  for (let i = 0; i < game.players.length; i++) {
+    if (game.players[i].user === username) {
+      found = true;
+    }
+  }
+  if (!found) {
     return res.sendStatus(401);
   }
   game.status = 'playing';
+
+  console.log('playing');
 
   if (game.current_player !== username) {
     return res.json({ status: 'not your turn!' });
   }
 
+  console.log('my turn');
+
   if (req.body.move_type === 'play') {
     // play the tiles
-    //if ( playTiles(game, req.body.row, req.body.col, req.body.tiles) )
-    // move on to next player
-    let numPlayers = game.players.length;
-    let nextPlayerIndex = 0;
-    for (let i = 0; i < numPlayers; i++) {
-      if (game.players[i].user === game.current_player) {
-        nextPlayerIndex = i + 1;
+    if (
+      playTiles(
+        game,
+        req.body.row,
+        req.body.col,
+        req.body.direction,
+        req.body.tiles
+      )
+    ) {
+      console.log('playTiles succeeded');
+
+      // remove the player's tiles
+      removeTiles(game, req.body.tiles);
+
+      // fetch some new tiles
+      let numTiles = req.body.tiles.length;
+      let myTiles = game.free_tiles.splice(0, numTiles);
+
+      // move on to next player
+      let numPlayers = game.players.length;
+      let nextPlayerIndex = 0;
+      for (let i = 0; i < numPlayers; i++) {
+        if (game.players[i].user === game.current_player) {
+          game.players[i].tiles = myTiles;
+          nextPlayerIndex = i + 1;
+        }
+        if (nextPlayerIndex >= numPlayers) {
+          game.current_player = game.players[0].user;
+        } else {
+          game.current_player = game.players[nextPlayerIndex].user;
+        }
       }
-      if (nextPlayerIndex >= numPlayers) {
-        game.current_player = game.players[0].user;
-      } else {
-        game.current_player = game.players[nextPlayerIndex].user;
+      console.dir(game);
+      return res.json({ status: 'ok' });
+    } else {
+      console.log('playTiles failed');
+      // move on to next player
+      let numPlayers = game.players.length;
+      let nextPlayerIndex = 0;
+      for (let i = 0; i < numPlayers; i++) {
+        if (game.players[i].user === game.current_player) {
+          nextPlayerIndex = i + 1;
+        }
+        if (nextPlayerIndex >= numPlayers) {
+          game.current_player = game.players[0].user;
+        } else {
+          game.current_player = game.players[nextPlayerIndex].user;
+        }
       }
+      console.dir(game);
+      return res.json({ status: 'bad move' });
     }
-    return res.json({ status: 'ok' });
   } else if (req.body.move_type === 'change') {
     // change some tiles
-    let numTiles = req.body.tiles.length;
+    // remove the player's tiles
+    removeTiles(game, tiles);
+
     for (let i = 0; i < numTiles; i++) {
       let tile = makeTile(req.body.tiles[i]);
-      game.tiles.push(tile);
+      game.free_tiles.push(tile);
     }
-    game.tiles = shuffle(game.tiles);
-    let myTiles = game.tiles.splice(0, numTiles - 1);
+    game.free_tiles = shuffle(game.free_tiles);
+    let myTiles = game.free_tiles.splice(0, numTiles);
     let numPlayers = game.players.length;
     let nextPlayerIndex = 0;
     for (let i = 0; i < numPlayers; i++) {
