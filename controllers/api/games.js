@@ -122,14 +122,20 @@ function playTiles(game, row, col, direction, tiles) {
 }
 
 function removeTiles(game, tiles) {
+  console.log('removeTiles');
   let numPlayers = game.players.length;
   for (let i = 0; i < numPlayers; i++) {
     if (game.players[i].user === game.current_player) {
+      console.log('user ' + game.current_player);
+      console.dir(game.players[i].tiles);
       for (let j = 0; j < tiles.length; j++) {
         let ch = tiles[j];
+        console.log('remove ' + ch);
         for (let k = 0; k < game.players[i].tiles.length; k++) {
           if (ch === game.players[i].tiles[k].letter) {
+            console.log('removing tile at ' + k);
             game.players[i].tiles.splice(k, 1);
+            console.dir(game.players[i].tiles);
             break;
           }
         }
@@ -241,7 +247,7 @@ router.post('/:id/players', function (req, res, next) {
     game.players.push({ user: username, tiles: myTiles, score: 0 });
   }
   //ws.broadcast('newplayer', { gameId: game.id, player: username });
-  res.sendStatus(201);
+  res.json({});
 });
 
 // place some tiles
@@ -304,8 +310,8 @@ router.put('/:id', function (req, res, next) {
     if (
       playTiles(
         game,
-        req.body.row,
-        req.body.col,
+        +req.body.row,
+        +req.body.col,
         req.body.direction,
         req.body.tiles
       )
@@ -324,14 +330,14 @@ router.put('/:id', function (req, res, next) {
       let nextPlayerIndex = 0;
       for (let i = 0; i < numPlayers; i++) {
         if (game.players[i].user === game.current_player) {
-          game.players[i].tiles = myTiles;
+          game.players[i].tiles = game.players[i].tiles.concat(myTiles);
           nextPlayerIndex = i + 1;
         }
-        if (nextPlayerIndex >= numPlayers) {
-          game.current_player = game.players[0].user;
-        } else {
-          game.current_player = game.players[nextPlayerIndex].user;
-        }
+      }
+      if (nextPlayerIndex >= numPlayers) {
+        game.current_player = game.players[0].user;
+      } else {
+        game.current_player = game.players[nextPlayerIndex].user;
       }
       console.dir(game);
       return res.json({ status: 'ok' });
