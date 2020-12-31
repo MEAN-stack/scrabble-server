@@ -1,5 +1,91 @@
 (window["webpackJsonp"] = window["webpackJsonp"] || []).push([["main"],{
 
+/***/ "/Sy0":
+/*!**********************************************************!*\
+  !*** ./src/app/scrabble-game/scrabble-game.component.ts ***!
+  \**********************************************************/
+/*! exports provided: ScrabbleGameComponent */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ScrabbleGameComponent", function() { return ScrabbleGameComponent; });
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "fXoL");
+/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! rxjs */ "qCKp");
+/* harmony import */ var _game_game_service__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../game/game.service */ "0QSR");
+/* harmony import */ var _scrabble_board_scrabble_board_component__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../scrabble-board/scrabble-board.component */ "tm7c");
+/* harmony import */ var _angular_common__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @angular/common */ "ofXK");
+/* harmony import */ var _player_card_player_card_component__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../player-card/player-card.component */ "1DNN");
+
+
+
+
+
+
+
+function ScrabbleGameComponent_app_player_card_2_Template(rf, ctx) { if (rf & 1) {
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](0, "app-player-card", 2);
+} if (rf & 2) {
+    const player_r1 = ctx.$implicit;
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("player", player_r1);
+} }
+class ScrabbleGameComponent {
+    constructor(gameService) {
+        this.gameService = gameService;
+        this.user = localStorage.getItem('user');
+    }
+    refresh() {
+        const source = Object(rxjs__WEBPACK_IMPORTED_MODULE_1__["timer"])(0, 1000);
+        const abc = source.subscribe(val => {
+            //      console.log(val);
+            this.gameService.getGameInfo().subscribe((response) => {
+                this.game = response;
+                this.board = this.game.board;
+                //          console.dir(this.game);
+                for (let i = 0; i < this.game.players.length; i++) {
+                    let player = this.game.players[i];
+                    player.is_current = false;
+                    if (player.user === this.game.current_player) {
+                        player.is_current = true;
+                    }
+                    if (this.user === player.user) {
+                        this.tiles = player.tiles;
+                    }
+                    //          this.rack.tiles = this.game.
+                }
+            }, (err) => {
+                console.log(err);
+            });
+        });
+    }
+    ;
+    ngOnInit() {
+        this.refresh();
+    }
+}
+ScrabbleGameComponent.ɵfac = function ScrabbleGameComponent_Factory(t) { return new (t || ScrabbleGameComponent)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdirectiveInject"](_game_game_service__WEBPACK_IMPORTED_MODULE_2__["GameService"])); };
+ScrabbleGameComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: ScrabbleGameComponent, selectors: [["app-scrabble-game"]], decls: 3, vars: 3, consts: [[3, "board", "tiles"], [3, "player", 4, "ngFor", "ngForOf"], [3, "player"]], template: function ScrabbleGameComponent_Template(rf, ctx) { if (rf & 1) {
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](0, "app-scrabble-board", 0);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](1, "div");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](2, ScrabbleGameComponent_app_player_card_2_Template, 1, 1, "app-player-card", 1);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+    } if (rf & 2) {
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("board", ctx.board)("tiles", ctx.tiles);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](2);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngForOf", ctx.game.players);
+    } }, directives: [_scrabble_board_scrabble_board_component__WEBPACK_IMPORTED_MODULE_3__["ScrabbleBoardComponent"], _angular_common__WEBPACK_IMPORTED_MODULE_4__["NgForOf"], _player_card_player_card_component__WEBPACK_IMPORTED_MODULE_5__["PlayerCardComponent"]], styles: ["\n/*# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiIsImZpbGUiOiJzY3JhYmJsZS1nYW1lLmNvbXBvbmVudC5jc3MifQ== */"] });
+/*@__PURE__*/ (function () { _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](ScrabbleGameComponent, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Component"],
+        args: [{
+                selector: 'app-scrabble-game',
+                templateUrl: './scrabble-game.component.html',
+                styleUrls: ['./scrabble-game.component.css']
+            }]
+    }], function () { return [{ type: _game_game_service__WEBPACK_IMPORTED_MODULE_2__["GameService"] }]; }, null); })();
+
+
+/***/ }),
+
 /***/ 0:
 /*!***************************!*\
   !*** multi ./src/main.ts ***!
@@ -33,9 +119,22 @@ class GameService {
     constructor(http, router) {
         this.http = http;
         this.router = router;
+        this.id = +localStorage.getItem('id');
     }
     createGame() {
         return this.http.post("/api/games", {});
+    }
+    ;
+    joinGame(id = this.id) {
+        return this.http.post("/api/games/" + id + "/players", {});
+    }
+    ;
+    getGameInfo(id = this.id) {
+        return this.http.get("/api/games/" + this.id, {});
+    }
+    ;
+    playMove(move, id = this.id) {
+        return this.http.put("/api/games/" + this.id, move);
     }
     ;
 }
@@ -47,6 +146,55 @@ GameService.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjec
                 providedIn: 'root'
             }]
     }], function () { return [{ type: _angular_common_http__WEBPACK_IMPORTED_MODULE_1__["HttpClient"] }, { type: _angular_router__WEBPACK_IMPORTED_MODULE_2__["Router"] }]; }, null); })();
+
+
+/***/ }),
+
+/***/ "1DNN":
+/*!******************************************************!*\
+  !*** ./src/app/player-card/player-card.component.ts ***!
+  \******************************************************/
+/*! exports provided: PlayerCardComponent */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PlayerCardComponent", function() { return PlayerCardComponent; });
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "fXoL");
+
+
+class PlayerCardComponent {
+    constructor() { }
+    ngOnInit() {
+    }
+}
+PlayerCardComponent.ɵfac = function PlayerCardComponent_Factory(t) { return new (t || PlayerCardComponent)(); };
+PlayerCardComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: PlayerCardComponent, selectors: [["app-player-card"]], inputs: { player: "player" }, decls: 5, vars: 5, template: function PlayerCardComponent_Template(rf, ctx) { if (rf & 1) {
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "div");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](1, "p");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](2);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](3, "p");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](4);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+    } if (rf & 2) {
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵclassMap"]("player-card " + ctx.player.is_current);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](2);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtextInterpolate"](ctx.player.user);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](2);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtextInterpolate"](ctx.player.score);
+    } }, styles: ["\n/*# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiIsImZpbGUiOiJwbGF5ZXItY2FyZC5jb21wb25lbnQuY3NzIn0= */"] });
+/*@__PURE__*/ (function () { _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](PlayerCardComponent, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Component"],
+        args: [{
+                selector: 'app-player-card',
+                templateUrl: './player-card.component.html',
+                styleUrls: ['./player-card.component.css']
+            }]
+    }], function () { return []; }, { player: [{
+            type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Input"]
+        }] }); })();
 
 
 /***/ }),
@@ -126,10 +274,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "scrabbleSquares", function() { return scrabbleSquares; });
 var squares = [];
 function bonus(row, col) {
-    if ((row == 8) && (col == 8))
+    if ((row == 7) && (col == 7))
         return 'DW';
-    var x = (col < 8) ? col - 1 : 15 - col;
-    var y = (row < 8) ? row - 1 : 15 - row;
+    var x = (col < 7) ? col : 14 - col;
+    var y = (row < 7) ? row : 14 - row;
     if ((x == 0) && (y == 0) || (x == 7) && (y == 0) || (y == 7) && (x == 0))
         return 'TW';
     if (x == y) {
@@ -149,8 +297,8 @@ function bonus(row, col) {
         return 'DL';
     return 'none';
 }
-for (var row = 1; row <= 15; row++) {
-    for (var col = 1; col <= 15; col++) {
+for (var row = 0; row < 15; row++) {
+    for (var col = 0; col < 15; col++) {
         var square = {
             row: row,
             col: col,
@@ -209,7 +357,7 @@ class RackComponent {
     }
 }
 RackComponent.ɵfac = function RackComponent_Factory(t) { return new (t || RackComponent)(); };
-RackComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: RackComponent, selectors: [["app-rack"]], decls: 2, vars: 1, consts: [[1, "rack"], ["class", "tile", 4, "ngFor", "ngForOf"], [1, "tile"], [1, "tile-letter"], [1, "tile-value"]], template: function RackComponent_Template(rf, ctx) { if (rf & 1) {
+RackComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: RackComponent, selectors: [["app-rack"]], inputs: { tiles: "tiles" }, decls: 2, vars: 1, consts: [[1, "rack"], ["class", "tile", 4, "ngFor", "ngForOf"], [1, "tile"], [1, "tile-letter"], [1, "tile-value"]], template: function RackComponent_Template(rf, ctx) { if (rf & 1) {
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "div", 0);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](1, RackComponent_div_1_Template, 5, 2, "div", 1);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
@@ -224,7 +372,51 @@ RackComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComp
                 templateUrl: './rack.component.html',
                 styleUrls: ['./rack.component.css']
             }]
-    }], function () { return []; }, null); })();
+    }], function () { return []; }, { tiles: [{
+            type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Input"]
+        }] }); })();
+
+
+/***/ }),
+
+/***/ "Pa9y":
+/*!*************************!*\
+  !*** ./src/app/tile.ts ***!
+  \*************************/
+/*! exports provided: tileValues */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "tileValues", function() { return tileValues; });
+const tileValues = [
+    1,
+    3,
+    3,
+    2,
+    1,
+    4,
+    2,
+    4,
+    1,
+    8,
+    5,
+    1,
+    3,
+    1,
+    1,
+    3,
+    10,
+    1,
+    1,
+    1,
+    1,
+    4,
+    4,
+    8,
+    4,
+    10,
+]; //A..Z
 
 
 /***/ }),
@@ -332,6 +524,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _header_header_component__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./header/header.component */ "fECr");
 /* harmony import */ var _login_login_component__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./login/login.component */ "vtpD");
 /* harmony import */ var _auth_interceptor__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./auth.interceptor */ "E/nK");
+/* harmony import */ var _lobby_lobby_component__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./lobby/lobby.component */ "h6Cj");
+/* harmony import */ var _scrabble_game_scrabble_game_component__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./scrabble-game/scrabble-game.component */ "/Sy0");
+/* harmony import */ var _player_card_player_card_component__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./player-card/player-card.component */ "1DNN");
+
+
+
+
 
 
 
@@ -350,6 +549,7 @@ AppModule.ɵmod = _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵdefineNgModule
 AppModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵdefineInjector"]({ factory: function AppModule_Factory(t) { return new (t || AppModule)(); }, providers: [{ provide: _angular_common_http__WEBPACK_IMPORTED_MODULE_3__["HTTP_INTERCEPTORS"], useClass: _auth_interceptor__WEBPACK_IMPORTED_MODULE_10__["AuthInterceptor"], multi: true }], imports: [[
             _angular_platform_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserModule"],
             _angular_forms__WEBPACK_IMPORTED_MODULE_2__["ReactiveFormsModule"],
+            _angular_forms__WEBPACK_IMPORTED_MODULE_2__["FormsModule"],
             _angular_common_http__WEBPACK_IMPORTED_MODULE_3__["HttpClientModule"],
             _app_routing_module__WEBPACK_IMPORTED_MODULE_5__["AppRoutingModule"]
         ]] });
@@ -357,8 +557,12 @@ AppModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵdefineInjector
         _scrabble_board_scrabble_board_component__WEBPACK_IMPORTED_MODULE_6__["ScrabbleBoardComponent"],
         _rack_rack_component__WEBPACK_IMPORTED_MODULE_7__["RackComponent"],
         _header_header_component__WEBPACK_IMPORTED_MODULE_8__["HeaderComponent"],
-        _login_login_component__WEBPACK_IMPORTED_MODULE_9__["LoginComponent"]], imports: [_angular_platform_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserModule"],
+        _login_login_component__WEBPACK_IMPORTED_MODULE_9__["LoginComponent"],
+        _lobby_lobby_component__WEBPACK_IMPORTED_MODULE_11__["LobbyComponent"],
+        _scrabble_game_scrabble_game_component__WEBPACK_IMPORTED_MODULE_12__["ScrabbleGameComponent"],
+        _player_card_player_card_component__WEBPACK_IMPORTED_MODULE_13__["PlayerCardComponent"]], imports: [_angular_platform_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserModule"],
         _angular_forms__WEBPACK_IMPORTED_MODULE_2__["ReactiveFormsModule"],
+        _angular_forms__WEBPACK_IMPORTED_MODULE_2__["FormsModule"],
         _angular_common_http__WEBPACK_IMPORTED_MODULE_3__["HttpClientModule"],
         _app_routing_module__WEBPACK_IMPORTED_MODULE_5__["AppRoutingModule"]] }); })();
 /*@__PURE__*/ (function () { _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵsetClassMetadata"](AppModule, [{
@@ -369,11 +573,15 @@ AppModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵdefineInjector
                     _scrabble_board_scrabble_board_component__WEBPACK_IMPORTED_MODULE_6__["ScrabbleBoardComponent"],
                     _rack_rack_component__WEBPACK_IMPORTED_MODULE_7__["RackComponent"],
                     _header_header_component__WEBPACK_IMPORTED_MODULE_8__["HeaderComponent"],
-                    _login_login_component__WEBPACK_IMPORTED_MODULE_9__["LoginComponent"]
+                    _login_login_component__WEBPACK_IMPORTED_MODULE_9__["LoginComponent"],
+                    _lobby_lobby_component__WEBPACK_IMPORTED_MODULE_11__["LobbyComponent"],
+                    _scrabble_game_scrabble_game_component__WEBPACK_IMPORTED_MODULE_12__["ScrabbleGameComponent"],
+                    _player_card_player_card_component__WEBPACK_IMPORTED_MODULE_13__["PlayerCardComponent"]
                 ],
                 imports: [
                     _angular_platform_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserModule"],
                     _angular_forms__WEBPACK_IMPORTED_MODULE_2__["ReactiveFormsModule"],
+                    _angular_forms__WEBPACK_IMPORTED_MODULE_2__["FormsModule"],
                     _angular_common_http__WEBPACK_IMPORTED_MODULE_3__["HttpClientModule"],
                     _app_routing_module__WEBPACK_IMPORTED_MODULE_5__["AppRoutingModule"]
                 ],
@@ -396,27 +604,17 @@ AppModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵdefineInjector
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HeaderComponent", function() { return HeaderComponent; });
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "fXoL");
-/* harmony import */ var _game_game_service__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../game/game.service */ "0QSR");
-
 
 
 class HeaderComponent {
-    constructor(gameService) {
-        this.gameService = gameService;
+    constructor() {
         this.title = 'Scrabble';
         this.logo = '/assets/img/logo.png';
     }
-    createGame() {
-        this.gameService.createGame().subscribe((response) => {
-            console.log("game id: " + response.id);
-        }, (err) => {
-            console.log(err);
-        });
-    }
     ngOnInit() { }
 }
-HeaderComponent.ɵfac = function HeaderComponent_Factory(t) { return new (t || HeaderComponent)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdirectiveInject"](_game_game_service__WEBPACK_IMPORTED_MODULE_1__["GameService"])); };
-HeaderComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: HeaderComponent, selectors: [["app-header"]], decls: 8, vars: 3, consts: [[1, "sticky-top", 2, "width", "100%"], [1, "navbar", "navbar-expand", "navbar-light", "bg-light"], ["href", "game-page", "title", "Scrabble", 1, "navbar-brand"], ["height", "30", 3, "src", "alt"], [1, "ml-1"], ["title", "New Game", 1, "btn", "btn-md", "btn-default", 3, "click"]], template: function HeaderComponent_Template(rf, ctx) { if (rf & 1) {
+HeaderComponent.ɵfac = function HeaderComponent_Factory(t) { return new (t || HeaderComponent)(); };
+HeaderComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: HeaderComponent, selectors: [["app-header"]], decls: 6, vars: 3, consts: [[1, "sticky-top", 2, "width", "100%"], [1, "navbar", "navbar-expand", "navbar-light", "bg-light"], ["href", "game-page", "title", "Scrabble", 1, "navbar-brand"], ["height", "30", 3, "src", "alt"], [1, "ml-1"]], template: function HeaderComponent_Template(rf, ctx) { if (rf & 1) {
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "div", 0);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](1, "nav", 1);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](2, "a", 2);
@@ -424,10 +622,6 @@ HeaderComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineCo
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](4, "span", 4);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](5);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](6, "button", 5);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function HeaderComponent_Template_button_click_6_listener() { return ctx.createGame(); });
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](7, " New Game ");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
@@ -445,7 +639,97 @@ HeaderComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineCo
                 templateUrl: './header.component.html',
                 styleUrls: ['./header.component.css']
             }]
-    }], function () { return [{ type: _game_game_service__WEBPACK_IMPORTED_MODULE_1__["GameService"] }]; }, null); })();
+    }], null, null); })();
+
+
+/***/ }),
+
+/***/ "h6Cj":
+/*!******************************************!*\
+  !*** ./src/app/lobby/lobby.component.ts ***!
+  \******************************************/
+/*! exports provided: LobbyComponent */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "LobbyComponent", function() { return LobbyComponent; });
+/* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "fXoL");
+/* harmony import */ var _angular_forms__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/forms */ "3Pt+");
+/* harmony import */ var _game_game_service__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../game/game.service */ "0QSR");
+/* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @angular/router */ "tyNb");
+
+
+
+
+
+
+class LobbyComponent {
+    constructor(gameService, router) {
+        this.gameService = gameService;
+        this.router = router;
+        this.joinGameForm = new _angular_forms__WEBPACK_IMPORTED_MODULE_1__["FormGroup"]({
+            id: new _angular_forms__WEBPACK_IMPORTED_MODULE_1__["FormControl"](0, _angular_forms__WEBPACK_IMPORTED_MODULE_1__["Validators"].required),
+        });
+    }
+    onSubmit() {
+        this.joinGameForm.disable();
+        this.joinGame(this.joinGameForm.value.id);
+    }
+    createGame() {
+        this.gameService.createGame().subscribe((response) => {
+            console.log("game id: " + response.id);
+            this.joinGame(response.id);
+        }, (err) => {
+            console.log(err);
+        });
+    }
+    joinGame(id) {
+        this.gameService.joinGame(id).subscribe((response) => {
+            console.log('success ' + response.text);
+            localStorage.setItem('id', id);
+            this.router.navigate(['../game-page']);
+        }, (err) => {
+            console.log('fail');
+            console.log(err);
+            this.joinGameForm.enable();
+        });
+    }
+    ngOnInit() {
+    }
+}
+LobbyComponent.ɵfac = function LobbyComponent_Factory(t) { return new (t || LobbyComponent)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdirectiveInject"](_game_game_service__WEBPACK_IMPORTED_MODULE_2__["GameService"]), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdirectiveInject"](_angular_router__WEBPACK_IMPORTED_MODULE_3__["Router"])); };
+LobbyComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: LobbyComponent, selectors: [["app-lobby"]], decls: 10, vars: 1, consts: [["title", "New Game", 1, "btn", "btn-md", "btn-default", 3, "click"], [3, "formGroup", "ngSubmit"], [1, "form-group"], ["for", "idInput"], ["type", "text", "id", "idInput", "formControlName", "id", 1, "form-control"], ["type", "submit", 1, "btn", "btn-primary"]], template: function LobbyComponent_Template(rf, ctx) { if (rf & 1) {
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "button", 0);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function LobbyComponent_Template_button_click_0_listener() { return ctx.createGame(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](1, " New Game\n");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](2, "form", 1);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("ngSubmit", function LobbyComponent_Template_form_ngSubmit_2_listener() { return ctx.onSubmit(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](3, "div");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](4, "div", 2);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](5, "label", 3);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](6, "GameId");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](7, "input", 4);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](8, "button", 5);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](9, "Join Game by Id");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+    } if (rf & 2) {
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](2);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("formGroup", ctx.joinGameForm);
+    } }, directives: [_angular_forms__WEBPACK_IMPORTED_MODULE_1__["ɵangular_packages_forms_forms_y"], _angular_forms__WEBPACK_IMPORTED_MODULE_1__["NgControlStatusGroup"], _angular_forms__WEBPACK_IMPORTED_MODULE_1__["FormGroupDirective"], _angular_forms__WEBPACK_IMPORTED_MODULE_1__["DefaultValueAccessor"], _angular_forms__WEBPACK_IMPORTED_MODULE_1__["NgControlStatus"], _angular_forms__WEBPACK_IMPORTED_MODULE_1__["FormControlName"]], styles: ["\n/*# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiIsImZpbGUiOiJsb2JieS5jb21wb25lbnQuY3NzIn0= */"] });
+/*@__PURE__*/ (function () { _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](LobbyComponent, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Component"],
+        args: [{
+                selector: 'app-lobby',
+                templateUrl: './lobby.component.html',
+                styleUrls: ['./lobby.component.css']
+            }]
+    }], function () { return [{ type: _game_game_service__WEBPACK_IMPORTED_MODULE_2__["GameService"] }, { type: _angular_router__WEBPACK_IMPORTED_MODULE_3__["Router"] }]; }, null); })();
 
 
 /***/ }),
@@ -462,33 +746,257 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ScrabbleBoardComponent", function() { return ScrabbleBoardComponent; });
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "fXoL");
 /* harmony import */ var _scrabble_squares__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../scrabble-squares */ "EKOO");
-/* harmony import */ var _angular_common__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @angular/common */ "ofXK");
+/* harmony import */ var _tile__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../tile */ "Pa9y");
+/* harmony import */ var _game_game_service__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../game/game.service */ "0QSR");
+/* harmony import */ var _angular_common__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @angular/common */ "ofXK");
+/* harmony import */ var _angular_forms__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @angular/forms */ "3Pt+");
 
 
 
 
-function ScrabbleBoardComponent_div_1_Template(rf, ctx) { if (rf & 1) {
+
+
+
+function ScrabbleBoardComponent_div_1_div_1_Template(rf, ctx) { if (rf & 1) {
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](0, "div");
 } if (rf & 2) {
-    const square_r1 = ctx.$implicit;
-    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵclassMap"]("scrabble-square " + square_r1.bonus);
+    const ctx_r3 = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵnextContext"](2);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵclassMap"]("glyphicon glyphicon-arrow-" + ctx_r3.userDirection);
+} }
+function ScrabbleBoardComponent_div_1_div_2_Template(rf, ctx) { if (rf & 1) {
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "div", 9);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](1, "p", 10);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](2);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](3, "p", 11);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](4);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+} if (rf & 2) {
+    const ctx_r4 = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵnextContext"](2);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](2);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtextInterpolate"](ctx_r4.currentTile.letter);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](2);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtextInterpolate"](ctx_r4.currentTile.value);
+} }
+function ScrabbleBoardComponent_div_1_Template(rf, ctx) { if (rf & 1) {
+    const _r6 = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵgetCurrentView"]();
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "div", 6);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function ScrabbleBoardComponent_div_1_Template_div_click_0_listener() { _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵrestoreView"](_r6); const square_r2 = ctx.$implicit; const ctx_r5 = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵnextContext"](); return ctx_r5.onClick(square_r2.row, square_r2.col); });
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](1, ScrabbleBoardComponent_div_1_div_1_Template, 1, 3, "div", 7);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](2, ScrabbleBoardComponent_div_1_div_2_Template, 5, 2, "div", 8);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+} if (rf & 2) {
+    const square_r2 = ctx.$implicit;
+    const ctx_r0 = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵnextContext"]();
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵclassMap"]("scrabble-square " + square_r2.bonus);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵpropertyInterpolate"]("row", square_r2.row);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵpropertyInterpolate"]("col", square_r2.col);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](1);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngIf", ctx_r0.isFocused(square_r2.row, square_r2.col));
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](1);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngIf", ctx_r0.testfunc(square_r2.row, square_r2.col));
+} }
+function ScrabbleBoardComponent_div_3_Template(rf, ctx) { if (rf & 1) {
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "div", 9);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](1, "p", 10);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](2);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](3, "p", 11);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](4);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+} if (rf & 2) {
+    const tile_r7 = ctx.$implicit;
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](2);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtextInterpolate"](tile_r7.letter);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](2);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtextInterpolate"](tile_r7.value);
 } }
 class ScrabbleBoardComponent {
-    constructor() {
+    constructor(gameService) {
+        this.gameService = gameService;
         this.squares = _scrabble_squares__WEBPACK_IMPORTED_MODULE_1__["scrabbleSquares"];
+        this.board = ' '.repeat(225); //' '.repeat(112) + 'HELLO' + ' '.repeat(108);
+        this.currentTile = { letter: 'A', value: 1, isBlank: false };
+        this.userBoard = this.board;
+        this.userDirection = 'right';
+        this.userSquare = { row: 100, col: 100 };
+        this.playTiles = '';
+        this.playSquare = { row: 40, col: 50 };
+        this.tiles = [{ letter: "F", value: 4, isBlank: false },
+            { letter: "R", value: 1, isBlank: false },
+            { letter: "G", value: 2, isBlank: false },
+            { letter: "I", value: 1, isBlank: false },
+            { letter: "Z", value: 10, isBlank: false },
+            { letter: "F", value: 4, isBlank: false },
+            { letter: "A", value: 1, isBlank: false }];
+        this.displayedTiles = this.tiles;
+    }
+    setCharAt(str, index, chr) {
+        if (index > str.length - 1)
+            return str;
+        return str.substring(0, index) + chr + str.substring(index + 1);
+    }
+    testfunc(row, col) {
+        let i = col + row * 15;
+        let letter = this.board[i];
+        let userLetter = this.userBoard[i];
+        if (letter != ' ') {
+            this.currentTile = {
+                letter: letter,
+                value: _tile__WEBPACK_IMPORTED_MODULE_2__["tileValues"][letter.charCodeAt(0) - 65],
+                isBlank: false
+            };
+            return true;
+        }
+        if (userLetter != ' ') {
+            this.currentTile = {
+                letter: userLetter,
+                value: _tile__WEBPACK_IMPORTED_MODULE_2__["tileValues"][userLetter.charCodeAt(0) - 65],
+                isBlank: false
+            };
+            return true;
+        }
+        return false;
+    }
+    onClick(row, col) {
+        this.playTiles = '';
+        this.displayedTiles = this.tiles;
+        this.userBoard = this.board;
+        if (this.isFocused(row, col)) {
+            this.userDirection = (this.userDirection === 'right') ? 'down' : 'right';
+        }
+        this.userSquare = { row: row, col: col };
+        this.playSquare = { row: row, col: col };
+    }
+    onKeyDown(evt) {
+        if (evt.key == 'Backspace') {
+            this.advanceSquare(-1);
+            let letter = this.userBoard[this.userSquare.row * 15 + this.userSquare.col];
+            if (letter === ' ') {
+                this.playSquare.row = this.userSquare.row;
+                this.playSquare.col = this.userSquare.col;
+                return;
+            }
+            this.userBoard = this.setCharAt(this.userBoard, this.userSquare.row * 15 + this.userSquare.col, ' ');
+            this.playTiles = this.playTiles.slice(0, -1);
+            for (let i = 0; i < this.tiles.length; i++) {
+                let tile = this.tiles[i];
+                if (letter === tile.letter) {
+                    this.displayedTiles.push(tile);
+                    return;
+                }
+            }
+            for (let i = 0; i < this.tiles.length; i++) {
+                let tile = this.tiles[i];
+                if (tile.isBlank) {
+                    this.displayedTiles.push(tile);
+                    return;
+                }
+            }
+        }
+        if (evt.key == 'Enter') {
+            console.log('put');
+            this.playMove();
+            this.userBoard = '';
+            this.playSquare = { row: 100, col: 100 };
+            this.userSquare = { row: 100, col: 100 };
+        }
+    }
+    onKeyPress(evt) {
+        console.log('userSquare: ', this.userSquare);
+        console.log('playSquare: ', this.playSquare);
+        let letter = evt.key.toUpperCase();
+        for (let i = 0; i < this.displayedTiles.length; i++) {
+            let tile = this.displayedTiles[i];
+            console.log(tile);
+            if (letter === tile.letter) {
+                this.displayedTiles.splice(i, 1);
+                this.userBoard = this.setCharAt(this.userBoard, this.userSquare.row * 15 + this.userSquare.col, letter);
+                this.playTiles += letter;
+                this.advanceSquare(1);
+                return;
+            }
+        }
+        for (let i = 0; i < this.displayedTiles.length; i++) {
+            let tile = this.displayedTiles[i];
+            if (tile.isBlank) {
+                this.displayedTiles.splice(i, 1);
+                this.userBoard = this.setCharAt(this.userBoard, this.userSquare.row * 15 + this.userSquare.col, letter.toLowerCase());
+                this.playTiles += letter.toLowerCase();
+                this.advanceSquare(1);
+                return;
+            }
+        }
+    }
+    advanceSquare(dir) {
+        if (this.userDirection === 'right') {
+            this.userSquare.col += dir;
+            while (this.userSquare.col >= 0 && this.userSquare.col < 15 && this.board[this.userSquare.row * 15 + this.userSquare.col] != ' ') {
+                this.userSquare.col += dir;
+            }
+        }
+        else {
+            this.userSquare.row += dir;
+            while (this.userSquare.row >= 0 && this.userSquare.row < 15 && this.board[this.userSquare.row * 15 + this.userSquare.col] != ' ') {
+                this.userSquare.row += dir;
+            }
+        }
+    }
+    isFocused(row, col) {
+        return (this.userSquare.row === row && this.userSquare.col === col);
+    }
+    playMove() {
+        let move = {
+            row: this.playSquare.row,
+            col: this.playSquare.col,
+            direction: (this.userDirection === 'right') ? 'A' : 'D',
+            tiles: this.playTiles,
+            move_type: 'play'
+        };
+        console.log(move);
+        this.gameService.playMove(move).subscribe((response) => {
+            console.log('yay');
+            console.log(response);
+        }, (err) => {
+            console.log('no');
+            console.log(err);
+        });
     }
     ngOnInit() {
+        this.displayedTiles = this.tiles;
     }
 }
-ScrabbleBoardComponent.ɵfac = function ScrabbleBoardComponent_Factory(t) { return new (t || ScrabbleBoardComponent)(); };
-ScrabbleBoardComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: ScrabbleBoardComponent, selectors: [["app-scrabble-board"]], decls: 2, vars: 1, consts: [[1, "board"], [3, "class", 4, "ngFor", "ngForOf"]], template: function ScrabbleBoardComponent_Template(rf, ctx) { if (rf & 1) {
+ScrabbleBoardComponent.ɵfac = function ScrabbleBoardComponent_Factory(t) { return new (t || ScrabbleBoardComponent)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdirectiveInject"](_game_game_service__WEBPACK_IMPORTED_MODULE_3__["GameService"])); };
+ScrabbleBoardComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: ScrabbleBoardComponent, selectors: [["app-scrabble-board"]], inputs: { board: "board", tiles: "tiles" }, decls: 10, vars: 3, consts: [["tabindex", "1", 1, "board", 3, "keypress", "keydown"], [3, "class", "row", "col", "click", 4, "ngFor", "ngForOf"], [1, "rack"], ["class", "tile", 4, "ngFor", "ngForOf"], [3, "ngModel", "ngModelChange"], ["type", "submit", 1, "btn", "btn-primary", 3, "click"], [3, "row", "col", "click"], [3, "class", 4, "ngIf"], ["class", "tile", 4, "ngIf"], [1, "tile"], [1, "tile-letter"], [1, "tile-value"]], template: function ScrabbleBoardComponent_Template(rf, ctx) { if (rf & 1) {
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "div", 0);
-        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](1, ScrabbleBoardComponent_div_1_Template, 1, 3, "div", 1);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("keypress", function ScrabbleBoardComponent_Template_div_keypress_0_listener($event) { return ctx.onKeyPress($event); })("keydown", function ScrabbleBoardComponent_Template_div_keydown_0_listener($event) { return ctx.onKeyDown($event); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](1, ScrabbleBoardComponent_div_1_Template, 3, 7, "div", 1);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](2, "div", 2);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](3, ScrabbleBoardComponent_div_3_Template, 5, 2, "div", 3);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](4, "div");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](5, "label");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](6, "Tiles");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](7, "input", 4);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("ngModelChange", function ScrabbleBoardComponent_Template_input_ngModelChange_7_listener($event) { return ctx.playTiles = $event; });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](8, "button", 5);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function ScrabbleBoardComponent_Template_button_click_8_listener() { return ctx.playMove(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtext"](9, "Make move");
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
     } if (rf & 2) {
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](1);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngForOf", ctx.squares);
-    } }, directives: [_angular_common__WEBPACK_IMPORTED_MODULE_2__["NgForOf"]], styles: ["\n/*# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiIsImZpbGUiOiJzY3JhYmJsZS1ib2FyZC5jb21wb25lbnQuY3NzIn0= */"] });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](2);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngForOf", ctx.displayedTiles);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵadvance"](4);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("ngModel", ctx.playTiles);
+    } }, directives: [_angular_common__WEBPACK_IMPORTED_MODULE_4__["NgForOf"], _angular_forms__WEBPACK_IMPORTED_MODULE_5__["DefaultValueAccessor"], _angular_forms__WEBPACK_IMPORTED_MODULE_5__["NgControlStatus"], _angular_forms__WEBPACK_IMPORTED_MODULE_5__["NgModel"], _angular_common__WEBPACK_IMPORTED_MODULE_4__["NgIf"]], styles: ["\n/*# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiIsImZpbGUiOiJzY3JhYmJsZS1ib2FyZC5jb21wb25lbnQuY3NzIn0= */"] });
 /*@__PURE__*/ (function () { _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵsetClassMetadata"](ScrabbleBoardComponent, [{
         type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Component"],
         args: [{
@@ -496,7 +1004,11 @@ ScrabbleBoardComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵd
                 templateUrl: './scrabble-board.component.html',
                 styleUrls: ['./scrabble-board.component.css']
             }]
-    }], function () { return []; }, null); })();
+    }], function () { return [{ type: _game_game_service__WEBPACK_IMPORTED_MODULE_3__["GameService"] }]; }, { board: [{
+            type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Input"]
+        }], tiles: [{
+            type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Input"]
+        }] }); })();
 
 
 /***/ }),
@@ -514,7 +1026,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "fXoL");
 /* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/router */ "tyNb");
 /* harmony import */ var _login_login_component__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./login/login.component */ "vtpD");
-/* harmony import */ var _scrabble_board_scrabble_board_component__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./scrabble-board/scrabble-board.component */ "tm7c");
+/* harmony import */ var _scrabble_game_scrabble_game_component__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./scrabble-game/scrabble-game.component */ "/Sy0");
+/* harmony import */ var _lobby_lobby_component__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./lobby/lobby.component */ "h6Cj");
+
 
 
 
@@ -523,7 +1037,8 @@ __webpack_require__.r(__webpack_exports__);
 
 const routes = [
     { path: 'login', component: _login_login_component__WEBPACK_IMPORTED_MODULE_2__["LoginComponent"] },
-    { path: 'game-page', component: _scrabble_board_scrabble_board_component__WEBPACK_IMPORTED_MODULE_3__["ScrabbleBoardComponent"] },
+    { path: 'lobby', component: _lobby_lobby_component__WEBPACK_IMPORTED_MODULE_4__["LobbyComponent"] },
+    { path: 'game-page', component: _scrabble_game_scrabble_game_component__WEBPACK_IMPORTED_MODULE_3__["ScrabbleGameComponent"] },
     { path: '', redirectTo: '/login', pathMatch: 'full' }
 ];
 class AppRoutingModule {
@@ -578,7 +1093,8 @@ class LoginComponent {
         this.loginService.login(this.loginForm.value.username, this.loginForm.value.password).subscribe((response) => {
             console.log("JWT: " + response.jwt);
             localStorage.setItem('jwt', response.jwt);
-            this.router.navigate(['../game-page']);
+            localStorage.setItem('user', this.loginForm.value.username);
+            this.router.navigate(['../lobby']);
         }, (err) => {
             console.log(err);
             this.loginForm.enable();
