@@ -44,7 +44,7 @@ function makeTile(ch) {
   if (ch === ' ') {
     return new Tile(ch, 0, true);
   } else {
-    let value = tileValue[ch.charCodeAt(0) - 65];
+    let value = tileValues[ch.charCodeAt(0) - 65];
     return new Tile(ch, value, false);
   }
 }
@@ -513,11 +513,13 @@ function wordAt(board, index, direction) {
   }
   let iStart = index;
   let iEnd = index;
+  let word = board[index];
   // find the start of the word
   while (iStart - stride >= 0) {
     if (board[iStart - stride] === ' ') {
       break;
     } else {
+      word = board[iStart - stride] + word;
       iStart -= stride;
     }
   }
@@ -526,18 +528,16 @@ function wordAt(board, index, direction) {
     if (board[iEnd + stride] === ' ') {
       break;
     } else {
+      word = word + board[iEnd + stride];
       iEnd += stride;
     }
   }
-  let word = '';
-  for (let i = iStart; i <= iEnd; i++) {
-    word += board[i];
-  }
+
   return { word: word, index: iStart, direction: direction };
 }
 
 // calculate the score for the word
-function wordScore(word, index, direction) {
+function wordScore(word, index, direction, playedTileIndices) {
   let stride = 1;
   if (direction === 'D') {
     stride = 15;
@@ -545,14 +545,20 @@ function wordScore(word, index, direction) {
   let multiplier = 1;
   let score = 0;
   for (let i = 0; i < word.length; i++) {
-    multiplier *= wordMultiplier[index];
+    if (playedTileIndices.includes(index)) {
+      multiplier *= wordMultiplier[index];
+    }
     let ch = word[i];
     if (!isLowerCase(ch)) {
-      score += letterMultiplier[index] * tileValue[ch.charCodeAt(0) - 65];
+      if (playedTileIndices.includes(index)) {
+        score += letterMultiplier[index] * tileValues[ch.charCodeAt(0) - 65];
+      } else {
+        score += tileValues[ch.charCodeAt(0) - 65];
+      }
     }
     index += stride;
   }
-  return 123;
+  return score * multiplier;
 }
 
 function setCharAt(str, index, chr) {
@@ -622,6 +628,7 @@ function playTiles(game, row, col, direction, tiles) {
   let adjacent = false;
   let lastTileIndex = -1;
   let words = [];
+  playedTileIndices = [];
   for (let i = 0; i < numTiles; i++) {
     // step to the next unoccupied board position
     console.log('index: ' + index + ' (' + game.board[index] + ')');
@@ -630,6 +637,7 @@ function playTiles(game, row, col, direction, tiles) {
     }
     // if we didn't fall off the board then play the tile
     if (index < 225) {
+      playedTileIndices.push(index);
       console.log('placing ' + tiles[i] + ' at position ' + index);
       game.board = setCharAt(game.board, index, tiles[i]);
       // check adjacent tiles
@@ -702,7 +710,12 @@ function playTiles(game, row, col, direction, tiles) {
   // all the new words are valid. Caculate the score
   score = 0;
   for (let i = 0; i < words.length; i++) {
-    score += wordScore(words[i].word, words[i].index, words[i].direction);
+    score += wordScore(
+      words[i].word,
+      words[i].index,
+      words[i].direction,
+      playedTileIndices
+    );
   }
   if (numTiles == 7) {
     // bingo!
@@ -956,7 +969,7 @@ router.put('/:id', function (req, res, next) {
         if (game.players[i].user === game.current_player) {
           game.players[i].tiles = game.players[i].tiles.concat(myTiles);
           nextPlayerIndex = i + 1;
-          game.players[i].score = score;
+          game.players[i].score += score;
         }
       }
       if (nextPlayerIndex >= numPlayers) {
