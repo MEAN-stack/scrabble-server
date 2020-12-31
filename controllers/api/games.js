@@ -1,11 +1,12 @@
 var router = require('express').Router();
 var jwt = require('jwt-simple');
 var config = require('../../config');
-//var ws = require('../../websockets');
+var ws = require('../../websockets');
 var Tile = require('../../tile');
 var Tiles = require('../../tiles');
 var shuffle = require('lodash.shuffle');
 var _ = require('lodash');
+const csw = require('../../csw19');
 
 var games = [];
 var nextId = 1234;
@@ -78,6 +79,9 @@ function getGameForUser(game, username) {
   return obj;
 }
 
+// TODO: check that at last one tile is placed adjacent to a tile on the board (unless the board is empty)
+// TODO: Check that each word is valid
+// TODO: calculate score
 function playTiles(game, row, col, direction, tiles) {
   console.log('playTiles');
   let index = row * 15 + col;
@@ -85,7 +89,7 @@ function playTiles(game, row, col, direction, tiles) {
   const newBoard = ' '.repeat(225);
   if (game.board === newBoard) {
     console.log('new board');
-    if (index != 112) {
+    if (index <= 112 - tiles.length || index > 112) {
       console.log('must start in centre');
       return false;
     }
@@ -121,6 +125,10 @@ function playTiles(game, row, col, direction, tiles) {
   return true;
 }
 
+function isLowerCase(ch) {
+  return ch >= 'a' && ch <= 'z';
+}
+
 function removeTiles(game, tiles) {
   console.log('removeTiles');
   let numPlayers = game.players.length;
@@ -132,7 +140,10 @@ function removeTiles(game, tiles) {
         let ch = tiles[j];
         console.log('remove ' + ch);
         for (let k = 0; k < game.players[i].tiles.length; k++) {
-          if (ch === game.players[i].tiles[k].letter) {
+          if (
+            (isLowerCase(ch) && ' ' === game.players[i].tiles[k].letter) ||
+            ch === game.players[i].tiles[k].letter
+          ) {
             console.log('removing tile at ' + k);
             game.players[i].tiles.splice(k, 1);
             console.dir(game.players[i].tiles);
@@ -250,6 +261,34 @@ router.post('/:id/players', function (req, res, next) {
   res.json({});
 });
 
+// return a player's tiles
+router.get('/:id/players/:player/tiles', function (req, res, next) {
+  if (!req.headers['x-auth']) {
+    return res.sendStatus(401);
+  }
+  var auth = jwt.decode(req.headers['x-auth'], config.secret);
+  var username = auth.username;
+
+  console.log('username: ' + username);
+  if (username !== req.params.player) {
+    return res.sendStatus(401);
+  }
+
+  let game = findGame(req.params.id);
+
+  if (!game) {
+    return res.sendStatus(404);
+  }
+
+  let tiles = [];
+  for (let i = 0; i < game.players.length; i++) {
+    if (game.players[i].user == username) {
+      tiles = game.players[i].tiles;
+    }
+  }
+  res.json({ tiles: tiles });
+});
+
 // place some tiles
 // the auth user must be a player of the game
 //
@@ -340,7 +379,6 @@ router.put('/:id', function (req, res, next) {
         game.current_player = game.players[nextPlayerIndex].user;
       }
       console.dir(game);
-      return res.json({ status: 'ok' });
     } else {
       console.log('playTiles failed');
       // move on to next player
@@ -383,7 +421,6 @@ router.put('/:id', function (req, res, next) {
         game.current_player = game.players[nextPlayerIndex].user;
       }
     }
-    return res.json({ status: 'ok' });
   } else {
     // pass
     // move on to next player
@@ -399,8 +436,28 @@ router.put('/:id', function (req, res, next) {
         game.current_player = game.players[nextPlayerIndex].user;
       }
     }
-    return res.json({ status: 'ok' });
   }
+
+  let players = [];
+  let tiles = [];
+  for (let i = 0; i < game.players.length; i++) {
+    let player = game.players[i];
+    players.push({ user: player.user, score: player.score });
+    if (username === player.user) {
+      tiles = player.tiles;
+    }
+  }
+  obj = {
+    id: game.id,
+    owner: game.owner,
+    players: players,
+    current_player: game.current_player,
+    status: game.status,
+    num_free_tiles: game.free_tiles.length,
+    board: game.board,
+  };
+  ws.broadcast('game', obj);
+  return res.json({ status: 'ok', tiles: tiles });
 });
 
 var eq = function (c1, c2) {
