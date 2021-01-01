@@ -25,7 +25,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 function ScrabbleGameComponent_app_player_card_3_Template(rf, ctx) { if (rf & 1) {
-    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](0, "app-player-card", 3);
+    _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](0, "app-player-card", 5);
 } if (rf & 2) {
     const player_r1 = ctx.$implicit;
     _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵproperty"]("player", player_r1);
@@ -36,43 +36,30 @@ class ScrabbleGameComponent {
         this.ws = ws;
         this.id = +localStorage.getItem('id');
         this.user = localStorage.getItem('user');
-        this.game = { id: undefined, owner: undefined, players: [], current_player: undefined, status: undefined, num_free_tiles: undefined, board: ' '.repeat(225) };
+        this.game = {
+            id: undefined,
+            owner: undefined,
+            players: [],
+            current_player: undefined,
+            status: undefined,
+            num_free_tiles: undefined,
+            board: ' '.repeat(225)
+        };
         this.tiles = [];
-        this.test = this.ws.connect(this.getUrl()).map((response) => {
-            let data = JSON.parse(response.data);
-            return data;
-        }).subscribe((msg) => {
-            console.log('websocket', msg);
-            if (msg.title == 'newplayer') {
-                if (this.id === msg.data.gameId) {
-                    this.game.players.push({ user: msg.data.player, score: 0, tiles: undefined, is_current: false });
-                }
-            }
-            if (msg.title == 'game') {
-                this.game = msg.data;
-                for (let i = 0; i < this.game.players.length; i++) {
-                    let player = this.game.players[i];
-                    player.is_current = false;
-                    if (player.user === this.game.current_player) {
-                        player.is_current = true;
-                    }
-                }
-            }
-        });
     }
     getUrl() {
-        if (window.location.protocol == 'http:') {
+        if (window.location.protocol === 'http:') {
             return 'ws://' + window.location.host;
         }
         else {
             return 'wss://' + window.location.host;
         }
     }
-    ngOnInit() {
-        this.gameService.getGameInfo().subscribe((response) => {
+    refresh() {
+        this.id = +localStorage.getItem('id');
+        this.gameService.getGameInfo(this.id).subscribe((response) => {
             this.game = response;
-            for (let i = 0; i < this.game.players.length; i++) {
-                let player = this.game.players[i];
+            for (const player of this.game.players) {
                 player.is_current = false;
                 if (player.user === this.game.current_player) {
                     player.is_current = true;
@@ -80,19 +67,45 @@ class ScrabbleGameComponent {
                 if (this.user === player.user) {
                     this.tiles = player.tiles;
                 }
-                //          this.rack.tiles = this.game.
             }
         }, (err) => {
             console.log(err);
         });
     }
+    ngOnInit() {
+        this.ws.connect(this.getUrl()).map((response) => {
+            const data = JSON.parse(response.data);
+            return data;
+        }).subscribe((msg) => {
+            console.log('websocket', msg);
+            if (msg.title === 'newplayer') {
+                if (this.id === msg.data.gameId) {
+                    this.game.players.push({ user: msg.data.player, score: 0, tiles: undefined, is_current: false });
+                }
+            }
+            if (msg.title === 'game' && msg.data.id === this.id) {
+                this.game = msg.data;
+                for (const player of this.game.players) {
+                    player.is_current = false;
+                    if (player.user === this.game.current_player) {
+                        player.is_current = true;
+                    }
+                }
+            }
+        });
+        this.refresh();
+    }
 }
 ScrabbleGameComponent.ɵfac = function ScrabbleGameComponent_Factory(t) { return new (t || ScrabbleGameComponent)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdirectiveInject"](_game_game_service__WEBPACK_IMPORTED_MODULE_2__["GameService"]), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdirectiveInject"](_websocket_service__WEBPACK_IMPORTED_MODULE_1__["WebsocketService"])); };
-ScrabbleGameComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: ScrabbleGameComponent, selectors: [["app-scrabble-game"]], features: [_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵProvidersFeature"]([_websocket_service__WEBPACK_IMPORTED_MODULE_1__["WebsocketService"]])], decls: 4, vars: 3, consts: [[1, "game-container"], [1, "board-container", 3, "board", "tiles"], [3, "player", 4, "ngFor", "ngForOf"], [3, "player"]], template: function ScrabbleGameComponent_Template(rf, ctx) { if (rf & 1) {
+ScrabbleGameComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineComponent"]({ type: ScrabbleGameComponent, selectors: [["app-scrabble-game"]], features: [_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵProvidersFeature"]([_websocket_service__WEBPACK_IMPORTED_MODULE_1__["WebsocketService"]])], decls: 6, vars: 3, consts: [[1, "game-container"], [1, "board-container", 3, "board", "tiles"], [3, "player", 4, "ngFor", "ngForOf"], [1, "btn", "btn-primary", 3, "click"], [1, "glyphicon", "glyphicon-refresh"], [3, "player"]], template: function ScrabbleGameComponent_Template(rf, ctx) { if (rf & 1) {
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](0, "div", 0);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](1, "app-scrabble-board", 1);
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](2, "div");
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵtemplate"](3, ScrabbleGameComponent_app_player_card_3_Template, 1, 1, "app-player-card", 2);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementStart"](4, "button", 3);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵlistener"]("click", function ScrabbleGameComponent_Template_button_click_4_listener() { return ctx.refresh(); });
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelement"](5, "div", 4);
+        _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
         _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵelementEnd"]();
     } if (rf & 2) {
@@ -121,7 +134,7 @@ ScrabbleGameComponent.ɵcmp = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵde
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(/*! /home/joe/scrabble-dev/scrabble/src/main.ts */"zUnb");
+module.exports = __webpack_require__(/*! /home/paulrobertson/dev/scrabble/src/main.ts */"zUnb");
 
 
 /***/ }),
@@ -150,21 +163,17 @@ class GameService {
         this.id = +localStorage.getItem('id');
     }
     createGame() {
-        return this.http.post("/api/games", {});
+        return this.http.post('/api/games', {});
     }
-    ;
     joinGame(id = this.id) {
-        return this.http.post("/api/games/" + id + "/players", {});
+        return this.http.post('/api/games/' + id + '/players', {});
     }
-    ;
     getGameInfo(id = this.id) {
-        return this.http.get("/api/games/" + this.id, {});
+        return this.http.get('/api/games/' + id, {});
     }
-    ;
     playMove(move, id = this.id) {
-        return this.http.put("/api/games/" + this.id, move);
+        return this.http.put('/api/games/' + id, move);
     }
-    ;
 }
 GameService.ɵfac = function GameService_Factory(t) { return new (t || GameService)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_angular_common_http__WEBPACK_IMPORTED_MODULE_1__["HttpClient"]), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_angular_router__WEBPACK_IMPORTED_MODULE_2__["Router"])); };
 GameService.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: GameService, factory: GameService.ɵfac, providedIn: 'root' });
@@ -272,7 +281,7 @@ class AuthInterceptor {
     constructor() {
     }
     intercept(request, next) {
-        var jwt = localStorage.getItem('jwt');
+        const jwt = localStorage.getItem('jwt');
         if (jwt !== null && jwt !== '') {
             request = request.clone({
                 headers: request.headers.set('X-Auth', jwt)
@@ -300,36 +309,44 @@ AuthInterceptor.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineI
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "scrabbleSquares", function() { return scrabbleSquares; });
-var squares = [];
+const squares = [];
 function bonus(row, col) {
-    if ((row == 7) && (col == 7))
-        return 'DW';
-    var x = (col < 7) ? col : 14 - col;
-    var y = (row < 7) ? row : 14 - row;
-    if ((x == 0) && (y == 0) || (x == 7) && (y == 0) || (y == 7) && (x == 0))
-        return 'TW';
-    if (x == y) {
-        if (x == 5)
-            return 'TL';
-        if (x == 6)
-            return 'DL';
+    if ((row === 7) && (col === 7)) {
         return 'DW';
     }
-    if ((x == 3) && (y == 0) || (y == 3) && (x == 0))
+    const x = (col < 7) ? col : 14 - col;
+    const y = (row < 7) ? row : 14 - row;
+    if ((x === 0 && y === 0) || (x === 7 && y === 0) || (y === 7 && x === 0)) {
+        return 'TW';
+    }
+    if (x === y) {
+        if (x === 5) {
+            return 'TL';
+        }
+        if (x === 6) {
+            return 'DL';
+        }
+        return 'DW';
+    }
+    if ((x === 3 && y === 0) || (y === 3 && x === 0)) {
         return 'DL';
-    if ((x == 1) && (y == 5) || (x == 5) && (y == 1))
+    }
+    if ((x === 1 && y === 5) || (x === 5 && y === 1)) {
         return 'TL';
-    if ((x == 2) && (y == 6) || (x == 6) && (y == 2))
+    }
+    if ((x === 2 && y === 6) || (x === 6 && y === 2)) {
         return 'DL';
-    if ((x == 3) && (y == 7) || (x == 7) && (y == 3))
+    }
+    if ((x === 3 && y === 7) || (x === 7 && y === 3)) {
         return 'DL';
+    }
     return 'none';
 }
-for (var row = 0; row < 15; row++) {
-    for (var col = 0; col < 15; col++) {
-        var square = {
-            row: row,
-            col: col,
+for (let row = 0; row < 15; row++) {
+    for (let col = 0; col < 15; col++) {
+        const square = {
+            row,
+            col,
             bonus: bonus(row, col)
         };
         squares.push(square);
@@ -377,7 +394,7 @@ const tileValues = [
     8,
     4,
     10,
-]; //A..Z
+]; // A..Z
 
 
 /***/ }),
@@ -404,19 +421,19 @@ class WebsocketService {
     connect(url) {
         if (!this.subject) {
             this.subject = this.create(url);
-            console.log("Successfully connected: " + url);
+            console.log('Successfully connected: ' + url);
         }
         return this.subject;
     }
     create(url) {
-        let ws = new WebSocket(url);
-        let observable = rxjs_Rx__WEBPACK_IMPORTED_MODULE_1__["Observable"].create((obs) => {
+        const ws = new WebSocket(url);
+        const observable = rxjs_Rx__WEBPACK_IMPORTED_MODULE_1__["Observable"].create((obs) => {
             ws.onmessage = obs.next.bind(obs);
             ws.onerror = obs.error.bind(obs);
             ws.onclose = obs.complete.bind(obs);
             return ws.close.bind(ws);
         });
-        let observer = {
+        const observer = {
             next: (data) => {
                 if (ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify(data));
@@ -501,9 +518,8 @@ class LoginService {
         this.router = router;
     }
     login(username, password) {
-        return this.http.post("/api/sessions", { username: username });
+        return this.http.post('/api/sessions', { username });
     }
-    ;
 }
 LoginService.ɵfac = function LoginService_Factory(t) { return new (t || LoginService)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_angular_common_http__WEBPACK_IMPORTED_MODULE_1__["HttpClient"]), _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_angular_router__WEBPACK_IMPORTED_MODULE_2__["Router"])); };
 LoginService.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInjectable"]({ token: LoginService, factory: LoginService.ɵfac, providedIn: 'root' });
@@ -688,7 +704,7 @@ class LobbyComponent {
     }
     createGame() {
         this.gameService.createGame().subscribe((response) => {
-            console.log("game id: " + response.id);
+            console.log('game id: ' + response.id);
             this.joinGame(response.id);
         }, (err) => {
             console.log(err);
@@ -698,9 +714,7 @@ class LobbyComponent {
         this.gameService.joinGame(id).subscribe((response) => {
             console.log('success ' + response.text);
             localStorage.setItem('id', id);
-            setTimeout(() => {
-                this.router.navigate(['../game-page']);
-            }, 500);
+            this.router.navigate(['../game-page']);
         }, (err) => {
             console.log('fail');
             console.log(err);
@@ -831,32 +845,33 @@ class ScrabbleBoardComponent {
     constructor(gameService) {
         this.gameService = gameService;
         this.squares = _scrabble_squares__WEBPACK_IMPORTED_MODULE_1__["scrabbleSquares"];
-        this.board = ' '.repeat(225); //' '.repeat(112) + 'HELLO' + ' '.repeat(108);
-        this.currentTile = { letter: 'A', value: 1, isBlank: false };
+        this.board = ' '.repeat(225);
         this.userBoard = this.board;
         this.userDirection = 'right';
         this.userSquare = { row: 100, col: 100 };
         this.playTiles = '';
         this.playSquare = { row: 40, col: 50 };
+        this.currentTile = { letter: 'A', value: 1, isBlank: false };
     }
     setCharAt(str, index, chr) {
-        if (index > str.length - 1)
+        if (index > str.length - 1) {
             return str;
+        }
         return str.substring(0, index) + chr + str.substring(index + 1);
     }
     testfunc(row, col) {
-        let i = col + row * 15;
-        let letter = this.board[i];
-        let userLetter = this.userBoard[i];
-        if (letter != ' ') {
+        const index = col + row * 15;
+        const letter = this.board[index];
+        const userLetter = this.userBoard[index];
+        if (letter !== ' ') {
             this.currentTile = {
-                letter: letter,
+                letter,
                 value: _tile__WEBPACK_IMPORTED_MODULE_2__["tileValues"][letter.charCodeAt(0) - 65],
                 isBlank: false
             };
             return true;
         }
-        if (userLetter != ' ') {
+        if (userLetter !== ' ') {
             this.currentTile = {
                 letter: userLetter,
                 value: _tile__WEBPACK_IMPORTED_MODULE_2__["tileValues"][userLetter.charCodeAt(0) - 65],
@@ -871,8 +886,8 @@ class ScrabbleBoardComponent {
         if (this.isFocused(row, col)) {
             this.userDirection = (this.userDirection === 'right') ? 'down' : 'right';
         }
-        this.userSquare = { row: row, col: col };
-        this.playSquare = { row: row, col: col };
+        this.userSquare = { row, col };
+        this.playSquare = { row, col };
     }
     tileClick(tile) {
         console.dir(tile);
@@ -886,32 +901,31 @@ class ScrabbleBoardComponent {
         this.onKeyPress({ key: letter });
     }
     onKeyDown(evt) {
-        if (evt.key == 'Backspace') {
+        if (evt.key === 'Backspace') {
             this.advanceSquare(-1);
-            let letter = this.userBoard[this.userSquare.row * 15 + this.userSquare.col];
+            const index = this.userSquare.row * 15 + this.userSquare.col;
+            const letter = this.userBoard[index];
             if (letter === ' ') {
                 this.playSquare.row = this.userSquare.row;
                 this.playSquare.col = this.userSquare.col;
                 return;
             }
-            this.userBoard = this.setCharAt(this.userBoard, this.userSquare.row * 15 + this.userSquare.col, ' ');
+            this.userBoard = this.setCharAt(this.userBoard, index, ' ');
             this.playTiles = this.playTiles.slice(0, -1);
-            for (let i = 0; i < this.tiles.length; i++) {
-                let tile = this.tiles[i];
+            for (const tile of this.tiles) {
                 if (letter === tile.letter) {
                     this.displayedTiles.push(tile);
                     return;
                 }
             }
-            for (let i = 0; i < this.tiles.length; i++) {
-                let tile = this.tiles[i];
+            for (const tile of this.tiles) {
                 if (tile.isBlank) {
                     this.displayedTiles.push(tile);
                     return;
                 }
             }
         }
-        if (evt.key == 'Enter') {
+        if (evt.key === 'Enter') {
             this.playMove();
             this.userBoard = ' '.repeat(225);
             this.playSquare = { row: 100, col: 100 };
@@ -919,40 +933,44 @@ class ScrabbleBoardComponent {
         }
     }
     onKeyPress(evt) {
-        let letter = evt.key.toUpperCase();
+        const letter = evt.key.toUpperCase();
+        const index = this.userSquare.row * 15 + this.userSquare.col;
         for (let i = 0; i < this.displayedTiles.length; i++) {
-            let tile = this.displayedTiles[i];
+            const tile = this.displayedTiles[i];
             if (letter === tile.letter) {
                 this.displayedTiles.splice(i, 1);
-                this.userBoard = this.setCharAt(this.userBoard, this.userSquare.row * 15 + this.userSquare.col, letter);
+                this.userBoard = this.setCharAt(this.userBoard, index, letter);
                 this.playTiles += letter;
                 this.advanceSquare(1);
-                return true;
+                return;
             }
         }
         for (let i = 0; i < this.displayedTiles.length; i++) {
-            let tile = this.displayedTiles[i];
+            const tile = this.displayedTiles[i];
             if (tile.isBlank) {
                 this.displayedTiles.splice(i, 1);
-                this.userBoard = this.setCharAt(this.userBoard, this.userSquare.row * 15 + this.userSquare.col, letter.toLowerCase());
+                this.userBoard = this.setCharAt(this.userBoard, index, letter.toLowerCase());
                 this.playTiles += letter.toLowerCase();
                 this.advanceSquare(1);
-                return true;
+                return;
             }
         }
-        return false;
     }
     advanceSquare(dir) {
+        let index = this.userSquare.row * 15 + this.userSquare.col;
         if (this.userDirection === 'right') {
             this.userSquare.col += dir;
-            while (this.userSquare.col >= 0 && this.userSquare.col < 15 && this.board[this.userSquare.row * 15 + this.userSquare.col] != ' ') {
+            index += 1;
+            while (this.userSquare.col >= 0 && this.userSquare.col < 14 && this.board[index] !== ' ') {
                 this.userSquare.col += dir;
+                index += 1;
             }
         }
         else {
             this.userSquare.row += dir;
-            while (this.userSquare.row >= 0 && this.userSquare.row < 15 && this.board[this.userSquare.row * 15 + this.userSquare.col] != ' ') {
+            while (this.userSquare.row >= 0 && this.userSquare.row < 14 && this.board[index] !== ' ') {
                 this.userSquare.row += dir;
+                index += 15;
             }
         }
     }
@@ -960,9 +978,10 @@ class ScrabbleBoardComponent {
         return (this.userSquare.row === row && this.userSquare.col === col);
     }
     change() {
-        this.gameService.playMove({ move_type: 'change', tiles: this.playTiles }).subscribe((response) => {
+        const id = +localStorage.getItem('id');
+        this.gameService.playMove({ move_type: 'change', tiles: this.playTiles }, id).subscribe((response) => {
             console.log(response);
-            if (response.status == 'ok') {
+            if (response.status === 'ok') {
                 this.tiles = response.tiles;
             }
             this.resetVars();
@@ -971,9 +990,10 @@ class ScrabbleBoardComponent {
         });
     }
     pass() {
-        this.gameService.playMove({ move_type: 'pass' }).subscribe((response) => {
+        const id = +localStorage.getItem('id');
+        this.gameService.playMove({ move_type: 'pass' }, id).subscribe((response) => {
             console.log(response);
-            if (response.status == 'ok') {
+            if (response.status === 'ok') {
                 this.tiles = response.tiles;
                 this.resetVars();
             }
@@ -988,7 +1008,8 @@ class ScrabbleBoardComponent {
         this.playTiles = '';
     }
     playMove() {
-        let move = {
+        const id = +localStorage.getItem('id');
+        const move = {
             row: this.playSquare.row,
             col: this.playSquare.col,
             direction: (this.userDirection === 'right') ? 'A' : 'D',
@@ -996,18 +1017,15 @@ class ScrabbleBoardComponent {
             move_type: 'play'
         };
         console.log(move);
-        this.gameService.playMove(move).subscribe((response) => {
+        this.gameService.playMove(move, id).subscribe((response) => {
             console.log(response);
-            if (response.status == 'ok') {
+            if (response.status === 'ok') {
                 this.tiles = response.tiles;
             }
             this.resetVars();
         }, (err) => {
             console.log(err);
         });
-    }
-    testfunction(evt) {
-        console.log(evt);
     }
     ngOnInit() {
     }
@@ -1146,7 +1164,7 @@ class LoginComponent {
     onSubmit() {
         this.loginForm.disable();
         this.loginService.login(this.loginForm.value.username, this.loginForm.value.password).subscribe((response) => {
-            console.log("JWT: " + response.jwt);
+            console.log('JWT: ' + response.jwt);
             localStorage.setItem('jwt', response.jwt);
             localStorage.setItem('user', this.loginForm.value.username);
             this.router.navigate(['../lobby']);
