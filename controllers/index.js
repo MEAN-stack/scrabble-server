@@ -1,3 +1,4 @@
+'use strict';
 /*
   We define our Express routes here
 */

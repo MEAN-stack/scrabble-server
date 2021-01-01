@@ -1,3 +1,4 @@
+'use strict';
 var router = require('express').Router();
 var jwt = require('jwt-simple');
 var config = require('../../config');
@@ -508,17 +509,20 @@ const letterMultiplier = [
 // given the position of any letter, find the whole word on the board, and its starting index
 function wordAt(board, index, direction) {
   let stride = 1;
-  let testfunc = (i, dir) => { return ((dir<0)? (i%15>0):(i%15<14)) }
+  let testfunc = (i, dir) => {
+    return dir < 0 ? i % 15 > 0 : i % 15 < 14;
+  };
   if (direction === 'D') {
     stride = 15;
-    testfunc = (i,dir) => { return true }
-
+    testfunc = (i, dir) => {
+      return true;
+    };
   }
   let iStart = index;
   let iEnd = index;
   let word = board[index];
   // find the start of the word
-  while (iStart - stride >= 0 && testfunc(iStart,-1)) {
+  while (iStart - stride >= 0 && testfunc(iStart, -1)) {
     if (board[iStart - stride] === ' ') {
       break;
     } else {
@@ -527,7 +531,7 @@ function wordAt(board, index, direction) {
     }
   }
   // find the end of the word
-  while (iEnd + stride < 225 && testfunc(iEnd,1)) {
+  while (iEnd + stride < 225 && testfunc(iEnd, 1)) {
     if (board[iEnd + stride] === ' ') {
       break;
     } else {
@@ -561,6 +565,7 @@ function wordScore(word, index, direction, playedTileIndices) {
     }
     index += stride;
   }
+  console.log('score for ' + word + ' (' + index + ') = ' + score * multiplier);
   return score * multiplier;
 }
 
@@ -583,7 +588,7 @@ function getGameForUser(game, username) {
       players.push({ user: player.user, score: player.score });
     }
   }
-  obj = {
+  let obj = {
     id: game.id,
     owner: game.owner,
     players: players,
@@ -635,7 +640,7 @@ function playTiles(game, row, col, direction, tiles) {
 
   let lastTileIndex = -1;
   let words = [];
-  playedTileIndices = [];
+  let playedTileIndices = [];
   for (let i = 0; i < numTiles; i++) {
     // step to the next unoccupied board position
     console.log('index: ' + index + ' (' + game.board[index] + ')');
@@ -672,12 +677,14 @@ function playTiles(game, row, col, direction, tiles) {
       return score;
     }
   }
-  if(words.length === 0 || tiles.length>1){
-    words.push(wordAt(game.board, row * 15 + col, direction));
+  let playedWord = wordAt(game.board, row * 15 + col, direction);
+  console.log('played-word = ', playedWord);
+  if (playedWord.word.length > 1) {
+    words.push(playedWord);
   }
   console.dir(words);
-  if(words.length === 1 && words[0].word === tiles && !isNewBoard){
-    console.log('not part of grid')
+  if (words.length === 1 && words[0].word === tiles && !isNewBoard) {
+    console.log('not part of grid');
     game.board = origBoard;
     return score;
   }
@@ -822,7 +829,7 @@ router.post('/:id/players', function (req, res, next) {
   var username = auth.username;
   var game = findGame(req.params.id);
   //console.dir(game);
-  found = false;
+  let found = false;
   for (let i = 0; i < game.players.length; i++) {
     if (game.players[i].user === username) {
       found = true;
@@ -904,10 +911,11 @@ router.put('/:id', function (req, res, next) {
   //console.dir(game);
 
   let found = false;
+  let playerTiles = [];
   for (let i = 0; i < game.players.length; i++) {
     if (game.players[i].user === username) {
       found = true;
-      var playerTiles = game.players[i].tiles.slice();
+      playerTiles = game.players[i].tiles.slice();
     }
   }
   if (!found) {
@@ -923,24 +931,24 @@ router.put('/:id', function (req, res, next) {
 
   console.log('my turn');
 
-  if(req.body.tiles){
+  if (req.body.tiles) {
     // check you have the tiles being played
     let used = Array(7).fill(false);
-    for(let played of req.body.tiles){
-      let isOwned=false;
-      for(let i = 0; i<playerTiles.length;i++){
-        if((playerTiles[i].letter === played && !used[i]) ||
-           (isLowerCase(played) && playerTiles[i].isBlank && !used[i]))
-        {
+    for (let played of req.body.tiles) {
+      let isOwned = false;
+      for (let i = 0; i < playerTiles.length; i++) {
+        if (
+          (playerTiles[i].letter === played && !used[i]) ||
+          (isLowerCase(played) && playerTiles[i].isBlank && !used[i])
+        ) {
           isOwned = true;
-          used[i]=true;
-          console.log('char: '+played+ ' is in rack at position ' + i);
+          used[i] = true;
+          console.log('char: ' + played + ' is in rack at position ' + i);
           break;
         }
-
       }
-      if(!isOwned){
-        return res.json({status: 'you don\'t own the letter ' + played});
+      if (!isOwned) {
+        return res.json({ status: "you don't own the letter " + played });
       }
     }
   }
@@ -994,7 +1002,7 @@ router.put('/:id', function (req, res, next) {
     // change some tiles
     // remove the player's tiles
     removeTiles(game, req.body.tiles);
-    numTiles = req.body.tiles.length
+    let numTiles = req.body.tiles.length;
 
     for (let i = 0; i < numTiles; i++) {
       let tile = makeTile(req.body.tiles[i]);
@@ -1008,7 +1016,7 @@ router.put('/:id', function (req, res, next) {
         game.players[i].tiles = game.players[i].tiles.concat(myTiles);
       }
     }
-  }//  else {
+  } //  else {
   //   // pass
   //   // move on to next player
   //   let numPlayers = game.players.length;
@@ -1048,7 +1056,7 @@ router.put('/:id', function (req, res, next) {
       tiles = player.tiles;
     }
   }
-  obj = {
+  let obj = {
     id: game.id,
     owner: game.owner,
     players: players,

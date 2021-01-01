@@ -1,17 +1,20 @@
-var router = require('express').Router()
-var jwt = require('jwt-simple')
-var config = require('../../config')
+'use strict';
+var router = require('express').Router();
+var jwt = require('jwt-simple');
+var config = require('../../config');
 
-router.post('/', function(req, res, next) {
+router.post('/', function (req, res, next) {
   try {
-    var token = jwt.encode({
-      username: req.body.username
-    }, config.secret)
-    res.json({jwt: token})
+    var token = jwt.encode(
+      {
+        username: req.body.username,
+      },
+      config.secret
+    );
+    res.json({ jwt: token });
+  } catch (ex) {
+    console.log('Caught ' + ex.message);
   }
-  catch (ex) {
-    console.log('Caught '+ex.message)
-  }
-})
+});
 
-module.exports = router
+module.exports = router;

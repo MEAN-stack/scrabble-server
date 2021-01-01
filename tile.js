@@ -1,3 +1,4 @@
+'use strict';
 var Tile = function (letter, value, isBlank) {
   this.letter = letter;
   this.value = value;

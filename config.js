@@ -1,3 +1,4 @@
+'use strict';
 module.exports = {
-  secret: 'secretsigningkey'
-}
+  secret: 'secretsigningkey',
+};

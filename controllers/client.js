@@ -1,3 +1,4 @@
+'use strict';
 /*
   This is the browser's entry point
   The browser must request /client?user=p4w&password=recycle
