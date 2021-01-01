@@ -30,8 +30,10 @@ exports.connect = function (server) {
   Each message has a title and a data payload
 */
 exports.broadcast = function (title, data) {
+  console.log('broadcast');
   var json = JSON.stringify({ title: title, data: data });
   clients.forEach(function (client) {
+    console.log('sending ' + json + ' to client');
     client.ws.send(json);
   });
 };

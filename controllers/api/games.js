@@ -841,6 +841,7 @@ router.post('/:id/players', function (req, res, next) {
     }
     let myTiles = game.free_tiles.splice(0, 7);
     game.players.push({ user: username, tiles: myTiles, score: 0 });
+    console.log('calling ws.broadcast');
     ws.broadcast('newplayer', { gameId: game.id, player: username });
   }
   res.json({});
