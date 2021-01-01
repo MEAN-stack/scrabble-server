@@ -508,14 +508,17 @@ const letterMultiplier = [
 // given the position of any letter, find the whole word on the board, and its starting index
 function wordAt(board, index, direction) {
   let stride = 1;
+  let testfunc = (i, dir) => { return ((dir<0)? (i%15>0):(i%15<14)) }
   if (direction === 'D') {
     stride = 15;
+    testfunc = (i,dir) => { return true }
+
   }
   let iStart = index;
   let iEnd = index;
   let word = board[index];
   // find the start of the word
-  while (iStart - stride >= 0) {
+  while (iStart - stride >= 0 && testfunc(iStart,-1)) {
     if (board[iStart - stride] === ' ') {
       break;
     } else {
@@ -524,7 +527,7 @@ function wordAt(board, index, direction) {
     }
   }
   // find the end of the word
-  while (iEnd + stride < 225) {
+  while (iEnd + stride < 225 && testfunc(iEnd,1)) {
     if (board[iEnd + stride] === ' ') {
       break;
     } else {
@@ -596,9 +599,17 @@ function playTiles(game, row, col, direction, tiles) {
   console.log('playTiles');
   let score = -1;
   let index = row * 15 + col;
+  let stride = 1;
+  let numTiles = tiles.length;
+  let isNewBoard = false;
+
+  if (direction === 'D') {
+    stride = 15;
+  }
 
   const newBoard = ' '.repeat(225);
   if (game.board === newBoard) {
+    isNewBoard = true;
     console.log('new board');
     if (direction === 'A') {
       if (index <= 112 - tiles.length || index > 112) {
@@ -618,14 +629,9 @@ function playTiles(game, row, col, direction, tiles) {
     return score;
   }
   let origBoard = game.board;
-  let stride = 1;
-  let numTiles = tiles.length;
-  if (direction === 'D') {
-    stride = 15;
-  }
+
   // try to place each tile
 
-  let adjacent = false;
   let lastTileIndex = -1;
   let words = [];
   playedTileIndices = [];
@@ -640,35 +646,6 @@ function playTiles(game, row, col, direction, tiles) {
       playedTileIndices.push(index);
       console.log('placing ' + tiles[i] + ' at position ' + index);
       game.board = setCharAt(game.board, index, tiles[i]);
-      // check adjacent tiles
-      if (
-        index >= 1 &&
-        index - 1 !== lastTileIndex &&
-        game.board[index - 1] !== ' '
-      ) {
-        adjacent = true;
-      }
-      if (
-        index < 224 &&
-        index + 1 !== lastTileIndex &&
-        game.board[index + 1] !== ' '
-      ) {
-        adjacent = true;
-      }
-      if (
-        index >= stride &&
-        index - stride !== lastTileIndex &&
-        game.board[index - stride] !== ' '
-      ) {
-        adjacent = true;
-      }
-      if (
-        index < 224 - stride &&
-        index + stride !== lastTileIndex &&
-        game.board[index + stride] !== ' '
-      ) {
-        adjacent = true;
-      }
       if (direction === 'D') {
         // check for new words across
         if (
@@ -694,7 +671,15 @@ function playTiles(game, row, col, direction, tiles) {
       return score;
     }
   }
-  words.push(wordAt(game.board, row * 15 + col, direction));
+  if(words.length === 0 || tiles.length>1){
+    words.push(wordAt(game.board, row * 15 + col, direction));
+  }
+  console.dir(words);
+  if(words.length === 1 && words[0].word === tiles && !isNewBoard){
+    console.log('not part of grid')
+    game.board = origBoard;
+    return score;
+  }
   // check all the new words are valid
   let allValid = true;
   for (let i = 0; i < words.length; i++) {
@@ -722,13 +707,6 @@ function playTiles(game, row, col, direction, tiles) {
     score += 50;
   }
 
-  // check that at last one tile is placed adjacent to a tile on the board (unless the board is empty)
-  if (!adjacent && !newBoard) {
-    console.log('must connect with a tile on the board');
-    // invalid play, put the tiles back how they were
-    game.board = origBoard;
-    return -1;
-  }
   return score;
 }
 
@@ -928,6 +906,7 @@ router.put('/:id', function (req, res, next) {
   for (let i = 0; i < game.players.length; i++) {
     if (game.players[i].user === username) {
       found = true;
+      var playerTiles = game.players[i].tiles.slice();
     }
   }
   if (!found) {
@@ -943,6 +922,27 @@ router.put('/:id', function (req, res, next) {
 
   console.log('my turn');
 
+  if(req.body.tiles){
+    // check you have the tiles being played
+    let used = Array(7).fill(false);
+    for(let played of req.body.tiles){
+      let isOwned=false;
+      for(let i = 0; i<playerTiles.length;i++){
+        if((playerTiles[i].letter === played && !used[i]) ||
+           (isLowerCase(played) && playerTiles[i].isBlank && !used[i]))
+        {
+          isOwned = true;
+          used[i]=true;
+          console.log('char: '+played+ ' is in rack at position ' + i);
+          break;
+        }
+
+      }
+      if(!isOwned){
+        return res.json({status: 'you don\'t own the letter ' + played});
+      }
+    }
+  }
   if (req.body.move_type === 'play') {
     // play the tiles
     let score = playTiles(
@@ -964,42 +964,36 @@ router.put('/:id', function (req, res, next) {
 
       // move on to next player
       let numPlayers = game.players.length;
-      let nextPlayerIndex = 0;
       for (let i = 0; i < numPlayers; i++) {
         if (game.players[i].user === game.current_player) {
           game.players[i].tiles = game.players[i].tiles.concat(myTiles);
-          nextPlayerIndex = i + 1;
           game.players[i].score += score;
         }
-      }
-      if (nextPlayerIndex >= numPlayers) {
-        game.current_player = game.players[0].user;
-      } else {
-        game.current_player = game.players[nextPlayerIndex].user;
       }
       //console.dir(game);
     } else {
       console.log('playTiles failed');
       // move on to next player
-      let numPlayers = game.players.length;
-      let nextPlayerIndex = 0;
-      for (let i = 0; i < numPlayers; i++) {
-        if (game.players[i].user === game.current_player) {
-          nextPlayerIndex = i + 1;
-        }
-        if (nextPlayerIndex >= numPlayers) {
-          game.current_player = game.players[0].user;
-        } else {
-          game.current_player = game.players[nextPlayerIndex].user;
-        }
-      }
+      // let numPlayers = game.players.length;
+      // let nextPlayerIndex = 0;
+      // for (let i = 0; i < numPlayers; i++) {
+      //   if (game.players[i].user === game.current_player) {
+      //     nextPlayerIndex = i + 1;
+      //   }
+      //   if (nextPlayerIndex >= numPlayers) {
+      //     game.current_player = game.players[0].user;
+      //   } else {
+      //     game.current_player = game.players[nextPlayerIndex].user;
+      //   }
+      // }
       //console.dir(game);
       return res.json({ status: 'bad move' });
     }
   } else if (req.body.move_type === 'change') {
     // change some tiles
     // remove the player's tiles
-    removeTiles(game, tiles);
+    removeTiles(game, req.body.tiles);
+    numTiles = req.body.tiles.length
 
     for (let i = 0; i < numTiles; i++) {
       let tile = makeTile(req.body.tiles[i]);
@@ -1008,33 +1002,40 @@ router.put('/:id', function (req, res, next) {
     game.free_tiles = shuffle(game.free_tiles);
     let myTiles = game.free_tiles.splice(0, numTiles);
     let numPlayers = game.players.length;
-    let nextPlayerIndex = 0;
     for (let i = 0; i < numPlayers; i++) {
       if (game.players[i].user === game.current_player) {
-        game.players[i].tiles = myTiles;
-        nextPlayerIndex = i + 1;
-      }
-      if (nextPlayerIndex >= numPlayers) {
-        game.current_player = game.players[0].user;
-      } else {
-        game.current_player = game.players[nextPlayerIndex].user;
+        game.players[i].tiles = game.players[i].tiles.concat(myTiles);
       }
     }
+  }//  else {
+  //   // pass
+  //   // move on to next player
+  //   let numPlayers = game.players.length;
+  //   let nextPlayerIndex = 0;
+  //   for (let i = 0; i < numPlayers; i++) {
+  //     if (game.players[i].user === game.current_player) {
+  //       nextPlayerIndex = i + 1;
+  //     }
+  //     if (nextPlayerIndex >= numPlayers) {
+  //       game.current_player = game.players[0].user;
+  //     } else {
+  //       game.current_player = game.players[nextPlayerIndex].user;
+  //     }
+  //   }
+  // }
+
+  // move on to the next player
+  let numPlayers = game.players.length;
+  let nextPlayerIndex = 0;
+  for (let i = 0; i < numPlayers; i++) {
+    if (game.players[i].user === game.current_player) {
+      nextPlayerIndex = i + 1;
+    }
+  }
+  if (nextPlayerIndex >= numPlayers) {
+    game.current_player = game.players[0].user;
   } else {
-    // pass
-    // move on to next player
-    let numPlayers = game.players.length;
-    let nextPlayerIndex = 0;
-    for (let i = 0; i < numPlayers; i++) {
-      if (game.players[i].user === game.current_player) {
-        nextPlayerIndex = i + 1;
-      }
-      if (nextPlayerIndex >= numPlayers) {
-        game.current_player = game.players[0].user;
-      } else {
-        game.current_player = game.players[nextPlayerIndex].user;
-      }
-    }
+    game.current_player = game.players[nextPlayerIndex].user;
   }
 
   let players = [];

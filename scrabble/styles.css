@@ -8,13 +8,24 @@
   --tile-width: 6vh;
   --rack-width: 50vh;
 }
+.game-container{
+  position: relative;
+  display: grid;
+  width: 100%;
+  grid-template-columns: -webkit-max-content auto;
+  grid-template-columns: max-content auto;
+  gap: 10px;
+}
+.board-container {
+  width: var(--board-width);
+  min-width: 587px;
+}
 .board {
   position: relative;
   display: grid;
-  width: var(--board-width);
   height: var(--board-width);
-  min-width: 587px;
   min-height: 587px;
+  min-width: 587px;
   grid-template-columns: repeat(15,1fr);
   grid-template-rows: repeat(15,1fr);
   /* gap: 1px; */
