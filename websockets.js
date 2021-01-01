@@ -22,6 +22,10 @@ exports.connect = function (server) {
       console.log('removing client');
       _.remove(clients, client);
     });
+    // keep the connection alive
+    var id = setInterval(function () {
+      ws.send(JSON.stringify(new Date()));
+    }, 10000);
   });
 };
 
