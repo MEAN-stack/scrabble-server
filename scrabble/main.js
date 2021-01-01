@@ -960,17 +960,18 @@ class ScrabbleBoardComponent {
         let index = this.userSquare.row * 15 + this.userSquare.col;
         if (this.userDirection === 'right') {
             this.userSquare.col += dir;
-            index += 1;
+            index += dir;
             while (this.userSquare.col >= 0 && this.userSquare.col < 14 && this.board[index] !== ' ') {
                 this.userSquare.col += dir;
-                index += 1;
+                index += dir;
             }
         }
         else {
             this.userSquare.row += dir;
+            index += dir * 15;
             while (this.userSquare.row >= 0 && this.userSquare.row < 14 && this.board[index] !== ' ') {
                 this.userSquare.row += dir;
-                index += 15;
+                index += dir * 15;
             }
         }
     }
