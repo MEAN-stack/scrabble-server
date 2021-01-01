@@ -592,6 +592,7 @@ function getGameForUser(game, username) {
   return obj;
 }
 
+// TODO: check that the played tiles are in the players rack
 function playTiles(game, row, col, direction, tiles) {
   console.log('playTiles');
   let score = -1;
