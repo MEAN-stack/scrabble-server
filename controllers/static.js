@@ -9,4 +9,8 @@ router.get('/', function (req, res) {
 
 router.use(express.static(__dirname + '/../scrabble'));
 
+router.get('*', function (req, res, next) {
+  res.sendfile(path.resolve(__dirname + '/../scrabble/index.html'));
+});
+
 module.exports = router;

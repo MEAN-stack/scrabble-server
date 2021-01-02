@@ -748,6 +748,9 @@ function removeTiles(game, tiles) {
   }
 }
 
+// TODO:
+// isGameComplete
+
 // return ids of all games
 router.get('/', function (req, res, next) {
   let ids = [];
@@ -983,56 +986,32 @@ router.put('/:id', function (req, res, next) {
       //console.dir(game);
     } else {
       console.log('playTiles failed');
-      // move on to next player
-      // let numPlayers = game.players.length;
-      // let nextPlayerIndex = 0;
-      // for (let i = 0; i < numPlayers; i++) {
-      //   if (game.players[i].user === game.current_player) {
-      //     nextPlayerIndex = i + 1;
-      //   }
-      //   if (nextPlayerIndex >= numPlayers) {
-      //     game.current_player = game.players[0].user;
-      //   } else {
-      //     game.current_player = game.players[nextPlayerIndex].user;
-      //   }
-      // }
-      //console.dir(game);
       return res.json({ status: 'bad move' });
     }
   } else if (req.body.move_type === 'change') {
     // change some tiles
-    // remove the player's tiles
-    removeTiles(game, req.body.tiles);
-    let numTiles = req.body.tiles.length;
+    if (game.free_tiles.length >= 7) {
+      // remove the player's tiles
+      removeTiles(game, req.body.tiles);
+      let numTiles = req.body.tiles.length;
 
-    for (let i = 0; i < numTiles; i++) {
-      let tile = makeTile(req.body.tiles[i]);
-      game.free_tiles.push(tile);
-    }
-    game.free_tiles = shuffle(game.free_tiles);
-    let myTiles = game.free_tiles.splice(0, numTiles);
-    let numPlayers = game.players.length;
-    for (let i = 0; i < numPlayers; i++) {
-      if (game.players[i].user === game.current_player) {
-        game.players[i].tiles = game.players[i].tiles.concat(myTiles);
+      for (let i = 0; i < numTiles; i++) {
+        let tile = makeTile(req.body.tiles[i]);
+        game.free_tiles.push(tile);
       }
+      game.free_tiles = shuffle(game.free_tiles);
+      let myTiles = game.free_tiles.splice(0, numTiles);
+      let numPlayers = game.players.length;
+      for (let i = 0; i < numPlayers; i++) {
+        if (game.players[i].user === game.current_player) {
+          game.players[i].tiles = game.players[i].tiles.concat(myTiles);
+        }
+      }
+    } else {
+      console.log('playTiles failed');
+      return res.json({ status: 'not enough free tiles for change' });
     }
-  } //  else {
-  //   // pass
-  //   // move on to next player
-  //   let numPlayers = game.players.length;
-  //   let nextPlayerIndex = 0;
-  //   for (let i = 0; i < numPlayers; i++) {
-  //     if (game.players[i].user === game.current_player) {
-  //       nextPlayerIndex = i + 1;
-  //     }
-  //     if (nextPlayerIndex >= numPlayers) {
-  //       game.current_player = game.players[0].user;
-  //     } else {
-  //       game.current_player = game.players[nextPlayerIndex].user;
-  //     }
-  //   }
-  // }
+  }
 
   // move on to the next player
   let numPlayers = game.players.length;
@@ -1070,56 +1049,30 @@ router.put('/:id', function (req, res, next) {
   return res.json({ status: 'ok', tiles: tiles });
 });
 
-var eq = function (c1, c2) {
-  return (
-    c1.color === c2.color &&
-    c1.shape === c2.shape &&
-    c1.number === c2.number &&
-    c1.fill === c2.fill
-  );
-};
+router.delete('/:id', function (req, res, next) {
+  console.log('delete');
 
-/**
- * Check if a set has already been submitted
- */
-var completed = function (game, set) {
-  var card = set[0];
-  for (var i = 0; i < game.completedSets.length; i++) {
-    for (var j = 0; j < game.completedSets[i].length; j++) {
-      if (eq(card, game.completedSets[i][j])) {
-        console.log('set is already complete');
-        return true;
-      }
-    }
+  if (!req.headers['x-auth']) {
+    return res.sendStatus(401);
   }
-  //todo: check set[1] and set[2]??
-  return false;
-};
+  var auth = jwt.decode(req.headers['x-auth'], config.secret);
+  var username = auth.username;
 
-/**
- * return true if the three cards form a set
- */
-var checkSet = function (set) {
-  var shape = 0;
-  var number = 0;
-  var fill = 0;
-  var color = 0;
-  if (set.length != 3) {
-    return false;
+  console.log('username: ' + username);
+
+  var game = findGame(req.params.id);
+  if (!game) {
+    return res.sendStatus(404);
   }
-  for (var i = 0; i < 3; i++) {
-    var card = set[i];
-    shape += card.shape;
-    number += card.number;
-    fill += card.fill;
-    color += card.color;
+
+  console.log('found game');
+
+  if (game.owner === username) {
+    deleteGame(game.id);
+  } else {
+    return res.sendStatus(401);
   }
-  shape %= 3;
-  number %= 3;
-  fill %= 3;
-  color %= 3;
-  return shape === 0 && number === 0 && fill === 0 && color === 0;
-};
+});
 
 // find game with given id
 //
@@ -1143,6 +1096,7 @@ function deleteGame(id) {
       break;
     }
   }
+  ws.broadcast('game over', { id: id });
 }
 
 module.exports = router;

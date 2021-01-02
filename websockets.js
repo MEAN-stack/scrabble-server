@@ -18,14 +18,17 @@ exports.connect = function (server) {
     console.log('adding client');
     clients.push(client);
     exports.broadcast('new client joined');
+
+    // keep the connection alive
+    var timerId = setInterval(function () {
+      ws.send(JSON.stringify(new Date()));
+    }, 10000);
+
     ws.on('close', function () {
+      clearInterval(timerId);
       console.log('removing client');
       _.remove(clients, client);
     });
-    // keep the connection alive
-    var id = setInterval(function () {
-      ws.send(JSON.stringify(new Date()));
-    }, 10000);
   });
 };
 

@@ -17,8 +17,6 @@ router.use(bodyParser.json());
 /*
   Other endpoints
 */
-router.use('/client', require('./client'));
-router.use('/api/tiles', require('./api/tiles'));
 router.use('/api/users', require('./api/users'));
 router.use('/api/sessions', require('./api/sessions'));
 router.use('/api/games', require('./api/games'));
