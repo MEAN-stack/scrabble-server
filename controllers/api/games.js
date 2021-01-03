@@ -600,7 +600,6 @@ function getGameForUser(game, username) {
   return obj;
 }
 
-// TODO: check that the played tiles are in the players rack
 function playTiles(game, row, col, direction, tiles) {
   console.log('playTiles');
   let score = -1;
@@ -620,19 +619,25 @@ function playTiles(game, row, col, direction, tiles) {
     if (direction === 'A') {
       if (index <= 112 - tiles.length || index > 112) {
         console.log('must start in centre');
-        return score;
+        return {
+          score: -1,
+          message: 'first word must cover the centre square',
+        };
       }
     } else {
       if (index <= 112 - 15 * tiles.length || index % 15 !== 7 || index > 112) {
         console.log('must start in centre');
-        return score;
+        return {
+          score: -1,
+          message: 'first word must cover the centre square',
+        };
       }
     }
   }
   // if the first position is already occupied then fail
   if (game.board[index] !== ' ') {
     console.log('must start in empty square');
-    return score;
+    return { score: -1, message: 'word must start in an empty square' };
   }
   let origBoard = game.board;
 
@@ -674,7 +679,7 @@ function playTiles(game, row, col, direction, tiles) {
     } else {
       // invalid play, put the tiles back how they were
       game.board = origBoard;
-      return score;
+      return { score: -1, message: 'word must fit on the board' };
     }
   }
   let playedWord = wordAt(game.board, row * 15 + col, direction);
@@ -686,19 +691,24 @@ function playTiles(game, row, col, direction, tiles) {
   if (words.length === 1 && words[0].word === tiles && !isNewBoard) {
     console.log('not part of grid');
     game.board = origBoard;
-    return score;
+    return {
+      score: -1,
+      message: 'word must be adjacent to a tile on the board',
+    };
   }
   // check all the new words are valid
   let allValid = true;
+  let message = 'invalid words: ';
   for (let i = 0; i < words.length; i++) {
     if (!isValidWord(words[i].word.toUpperCase())) {
       console.log('invalid word: ' + words[i].word.toUpperCase());
+      message += words[i].word.toUpperCase() + ' ';
       allValid = false;
     }
   }
   if (!allValid) {
     game.board = origBoard;
-    return score;
+    return { score: -1, message: message };
   }
   // all the new words are valid. Caculate the score
   score = 0;
@@ -715,7 +725,7 @@ function playTiles(game, row, col, direction, tiles) {
     score += 50;
   }
 
-  return score;
+  return { score: score, message: '' };
 }
 
 function isLowerCase(ch) {
@@ -750,6 +760,21 @@ function removeTiles(game, tiles) {
 
 // TODO:
 // isGameComplete
+function isGameComplete(game) {
+  if (game.free_tiles <= 0) {
+    return true;
+  }
+  let numPlayers = game.players.length;
+  for (let i = 0; i < numPlayers; i++) {
+    if (game.players[i].user === game.current_player) {
+      if (!game.players[i].knocking) {
+        return false;
+      }
+    }
+  }
+  // nobody can play
+  return true;
+}
 
 // return ids of all games
 router.get('/', function (req, res, next) {
@@ -843,7 +868,12 @@ router.post('/:id/players', function (req, res, next) {
       return res.sendStatus(404);
     }
     let myTiles = game.free_tiles.splice(0, 7);
-    game.players.push({ user: username, tiles: myTiles, score: 0 });
+    game.players.push({
+      user: username,
+      tiles: myTiles,
+      score: 0,
+      knocking: false,
+    });
     console.log('calling ws.broadcast');
     ws.broadcast('newplayer', { gameId: game.id, player: username });
   }
@@ -958,14 +988,14 @@ router.put('/:id', function (req, res, next) {
   }
   if (req.body.move_type === 'play') {
     // play the tiles
-    let score = playTiles(
+    let result = playTiles(
       game,
       +req.body.row,
       +req.body.col,
       req.body.direction,
       req.body.tiles
     );
-    if (score >= 0) {
+    if (result.score >= 0) {
       console.log('playTiles succeeded');
 
       // remove the player's tiles
@@ -980,13 +1010,14 @@ router.put('/:id', function (req, res, next) {
       for (let i = 0; i < numPlayers; i++) {
         if (game.players[i].user === game.current_player) {
           game.players[i].tiles = game.players[i].tiles.concat(myTiles);
-          game.players[i].score += score;
+          game.players[i].score += result.score;
+          game.players[i].knocking = false;
         }
       }
       //console.dir(game);
     } else {
       console.log('playTiles failed');
-      return res.json({ status: 'bad move' });
+      return res.json({ status: result.message });
     }
   } else if (req.body.move_type === 'change') {
     // change some tiles
@@ -1005,11 +1036,19 @@ router.put('/:id', function (req, res, next) {
       for (let i = 0; i < numPlayers; i++) {
         if (game.players[i].user === game.current_player) {
           game.players[i].tiles = game.players[i].tiles.concat(myTiles);
+          game.players[i].knocking = false;
         }
       }
     } else {
       console.log('playTiles failed');
       return res.json({ status: 'not enough free tiles for change' });
+    }
+  } else if (req.body.move_type === 'pass') {
+    let numPlayers = game.players.length;
+    for (let i = 0; i < numPlayers; i++) {
+      if (game.players[i].user === game.current_player) {
+        game.players[i].knocking = true;
+      }
     }
   }
 
